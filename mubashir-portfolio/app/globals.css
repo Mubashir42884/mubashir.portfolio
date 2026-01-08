@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@300;400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-pastel-bg text-pastel-text transition-colors duration-500 ease-in-out font-serif;
+}
+
+/* Dark mode overrides */
+.dark body {
+  @apply bg-dark-bg text-dark-text;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-pastel-accent/50 rounded-full;
+}
