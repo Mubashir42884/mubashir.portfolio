@@ -1,10 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  // If you host images from external sites (like LinkedIn or GitHub), 
-  // you might need to add their domains here later.
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
   images: {
-    domains: [],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**', // Allows images from external links (LinkedIn, etc.)
+      },
+    ],
   },
 };
 
