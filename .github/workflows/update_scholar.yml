@@ -1,0 +1,34 @@
+name: Update Scholar Data
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs every day at midnight UTC
+  workflow_dispatch:      # Allows you to click "Run Now" manually
+
+permissions:
+  contents: write
+
+jobs:
+  update-scholar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install Dependencies
+        run: |
+          pip install scholarly
+          
+      - name: Run Scraper Script
+        run: python scripts/fetch_scholar.py
+        
+      - name: Commit and Push
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          # Only commit if scholar.json actually changed
+          git add public/scholar.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update scholar data" && git push)
