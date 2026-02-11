@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { FaGithub, FaLinkedin, FaGraduationCap, FaOrcid } from 'react-icons/fa';
+import { FaGithub, FaLinkedin, FaGraduationCap, FaOrcid, FaRss, FaRssSquare } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 const Sidebar = ({ activeSection, scrollToSection }) => {
@@ -54,7 +54,8 @@ const Sidebar = ({ activeSection, scrollToSection }) => {
           <a href="https://linkedin.com/in/Mubashir-Mohsin" target="_blank" className="hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 transition-all"><FaLinkedin /></a>
           <a href="https://scholar.google.com/citations?user=L6Esq54AAAAJ&hl=en" target="_blank" className="hover:text-blue-500 dark:hover:text-blue-300 hover:scale-110 transition-all"><FaGraduationCap /></a>
           <a href="https://orcid.org/0009-0008-7205-0855" target="_blank" className="hover:text-green-600 dark:hover:text-green-400 hover:scale-110 transition-all"><FaOrcid /></a>
-          <a href="https://mubashir42884.github.io/blogsite/index.html" target="_blank" className="hover:text-green-600 dark:hover:text-green-400 hover:scale-110 transition-all"><fa-rss /></a>
+          <a href="https://mubashir42884.github.io/blogsite/index.html" target="_blank" rel="noopener noreferrer" className="hover:text-green-600 dark:hover:text-green-400 hover:scale-110 transition-all"><FaRssSquare /></a>
+
         </div>
 
         {/* Navigation - Now Interactive */}
