@@ -54,6 +54,7 @@ const Sidebar = ({ activeSection, scrollToSection }) => {
           <a href="https://linkedin.com/in/Mubashir-Mohsin" target="_blank" className="hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 transition-all"><FaLinkedin /></a>
           <a href="https://scholar.google.com/citations?user=L6Esq54AAAAJ&hl=en" target="_blank" className="hover:text-blue-500 dark:hover:text-blue-300 hover:scale-110 transition-all"><FaGraduationCap /></a>
           <a href="https://orcid.org/0009-0008-7205-0855" target="_blank" className="hover:text-green-600 dark:hover:text-green-400 hover:scale-110 transition-all"><FaOrcid /></a>
+          <a href="https://mubashir42884.github.io/blogsite/index.html" target="_blank" className="hover:text-green-600 dark:hover:text-green-400 hover:scale-110 transition-all"><fa-rss /></a>
         </div>
 
         {/* Navigation - Now Interactive */}
