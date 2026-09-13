@@ -4,8 +4,9 @@ import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
 import ScholarFeed from '@/components/ScholarFeed';
 import Unpublished from '@/components/Unpublished';
+import Projects from '@/components/Projects';
 import { motion } from 'framer-motion';
-import { GraduationCap } from 'lucide-react'; // Added for About icon consistency
+import { FolderKanban, GraduationCap } from 'lucide-react';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState('about');
@@ -19,7 +20,7 @@ export default function Home() {
   // 1. SCROLL SPY: Detects which section is visible as you scroll
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['about', 'publications', 'unpublished', 'interests'];
+      const sections = ['about', 'publications', 'unpublished', 'projects', 'interests'];
       
       // Calculate which section is currently in view
       for (const section of sections) {
@@ -130,8 +131,28 @@ export default function Home() {
             </div>
           </motion.section>
 
-           {/* --- RESEARCH INTERESTS --- */}
-           <motion.section 
+          {/* --- PROJECTS SECTION --- */}
+          <motion.section
+            id="projects"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={sectionVariants}
+          >
+            <div className="mb-7">
+              <h2 className="flex items-center gap-3 text-3xl font-bold text-pastel-accent dark:text-dark-accent">
+                <FolderKanban className="h-8 w-8" />
+                Projects
+              </h2>
+              <p className="mt-3 max-w-2xl text-lg leading-relaxed text-gray-600 dark:text-gray-300">
+                Selected software and research-oriented tools that support academic work, reproducibility, and practical computing workflows.
+              </p>
+            </div>
+            <Projects />
+          </motion.section>
+
+          {/* --- RESEARCH INTERESTS --- */}
+          <motion.section 
             id="interests"
             initial="hidden" 
             whileInView="visible" 

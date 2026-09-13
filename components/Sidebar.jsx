@@ -7,6 +7,7 @@ const Sidebar = ({ activeSection, scrollToSection }) => {
     { name: 'About', id: 'about' },
     { name: 'Publications', id: 'publications' },
     { name: 'Unpublished Works', id: 'unpublished' },
+    { name: 'Projects', id: 'projects' },
     { name: 'Research Interests', id: 'interests' },
   ];
 
