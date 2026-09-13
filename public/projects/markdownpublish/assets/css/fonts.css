@@ -1,0 +1,87 @@
+/*
+  MarkDownPublish local-font aliases.
+
+  No font binaries are bundled with the app. These @font-face rules only ask the
+  browser to use matching fonts already installed on the user's device. If a
+  named font is unavailable, the font stacks in the UI fall back gracefully.
+*/
+
+@font-face {
+  font-family: "MDP Lemon Milk";
+  src: local("LEMON MILK"), local("Lemon Milk"), local("LEMON MILK Regular"), local("Lemon/Milk");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MDP CMU Serif";
+  src: local("CMU Serif"), local("CMU Serif Roman"), local("Computer Modern Unicode Serif"), local("Computer Modern");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MDP CMU Sans";
+  src: local("CMU Sans Serif"), local("CMU Sans Serif Demi Condensed"), local("Computer Modern Unicode Sans Serif");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MDP CMU Typewriter";
+  src: local("CMU Typewriter Text"), local("CMU Typewriter Text Regular"), local("Computer Modern Unicode Typewriter Text");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MDP Quicksand";
+  src: local("Quicksand"), local("Quicksand Regular");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MDP Latin Modern Roman";
+  src: local("Latin Modern Roman"), local("LM Roman 10"), local("Latin Modern Roman 10");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MDP Latin Modern Mono";
+  src: local("Latin Modern Mono"), local("LM Mono 10"), local("Latin Modern Mono 10");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MDP JetBrains Mono";
+  src: local("JetBrains Mono"), local("JetBrainsMono-Regular");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MDP Fira Code";
+  src: local("Fira Code"), local("FiraCode-Regular");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MDP Source Code Pro";
+  src: local("Source Code Pro"), local("SourceCodePro-Regular");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}

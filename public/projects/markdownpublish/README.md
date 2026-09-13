@@ -13,7 +13,8 @@ MarkDownPublish is a local-first, minimal academic Markdown writing app with a l
 - Print/PDF header, footer, and page-number label metadata
 - HTML view and A4-like PDF preview mode
 - Download `.md`, export HTML, copy rendered HTML, browser Print / Save as PDF
-- Editor and preview font controls
+- Editor and preview font controls, including local-installed Lemon Milk, CMU Serif/Sans/Typewriter, Quicksand, Latin Modern, JetBrains Mono, Fira Code, Source Code Pro, and common system fonts
+- Red → orange → yellow MarkDownPublish logo/favicons with light/dark variants
 - Light/dark application modes
 - GitHub, Jupyter, and Midnight editor themes
 - Word/character counts, reading-time estimate, line/column indicator
@@ -64,16 +65,39 @@ markdownpublish/
 ├─ run-local.sh
 ├─ assets/
 │  ├─ css/
+│  │  ├─ fonts.css
 │  │  └─ styles.css
-│  └─ js/
-│     ├─ app.js
-│     ├─ export.js
-│     └─ markdown.js
+│  ├─ js/
+│  │  ├─ app.js
+│  │  ├─ export.js
+│  │  └─ markdown.js
+│  └─ images/
+│     ├─ favicon.svg
+│     ├─ markdownpublish-icon.svg
+│     ├─ markdownpublish-icon-dark.svg
+│     ├─ markdownpublish-logo.svg
+│     └─ markdownpublish-logo-dark.svg
 └─ vendor/
    ├─ marked/
    ├─ highlight/
    └─ mathjax/
 ```
+
+
+## Local font selection
+
+MarkDownPublish does **not** bundle proprietary or third-party font binaries. The font menu uses CSS `local(...)` aliases and font stacks to select fonts already installed on your device.
+
+Included local-first choices include:
+
+- Lemon Milk
+- CMU Serif, CMU Sans Serif, and CMU Typewriter Text
+- Quicksand
+- Latin Modern Roman and Latin Modern Mono
+- JetBrains Mono, Fira Code, Source Code Pro, Cascadia Code
+- Georgia, Times New Roman, Garamond, Baskerville, Palatino, Cambria, Arial, Helvetica, Verdana, Trebuchet MS, and Century Gothic
+
+If a selected local font is not installed, the browser automatically uses the next font in that option's fallback stack. The chosen editor and preview fonts remain saved in browser preferences.
 
 ## PDF export note
 
