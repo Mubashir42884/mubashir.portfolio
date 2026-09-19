@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="MarkDownPublish — a minimal academic Markdown editor with live HTML/PDF preview, LaTeX, tables, citations-ready structure, and local export." />
+  <meta name="description" content="MarkDownPublish — a local-first academic Markdown editor with live preview, LaTeX, reusable styles, file history, cached images, and HTML/PDF export." />
   <title>MarkDownPublish</title>
   <meta name="theme-color" content="#F97316" id="themeColorMeta" />
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" id="faviconLink" />
@@ -15,9 +15,7 @@
     window.MathJax = {
       jax: ["input/TeX", "output/HTML-CSS"],
       extensions: ["tex2jax.js"],
-      TeX: {
-        extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js", "noUndefined.js"]
-      },
+      TeX: { extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js", "noUndefined.js"] },
       tex2jax: {
         inlineMath: [["$", "$"], ["\\(", "\\)"]],
         displayMath: [["$$", "$$"], ["\\[", "\\]"]],
@@ -30,6 +28,94 @@
   </script>
 </head>
 <body data-theme="light" data-editor-theme="github">
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="sidebar-drawer" id="sidebarDrawer" aria-label="Workspace sidebar" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <strong>Workspace</strong>
+        <span>Styles, files, and preferences</span>
+      </div>
+      <button class="icon-button" id="closeSidebarBtn" aria-label="Close sidebar">×</button>
+    </div>
+
+    <div class="drawer-tabs" role="tablist" aria-label="Sidebar sections">
+      <button class="drawer-tab active" data-sidebar-panel="styles" role="tab">Styles</button>
+      <button class="drawer-tab" data-sidebar-panel="files" role="tab">Files</button>
+    </div>
+
+    <div class="drawer-content">
+      <section class="drawer-panel active" id="sidebarPanelStyles" data-panel="styles">
+        <div class="drawer-section-head">
+          <div>
+            <h2>Styles</h2>
+            <p>Reusable document style presets stored in this browser.</p>
+          </div>
+          <button class="mini-button" id="newStyleBtn">New style</button>
+        </div>
+        <div id="stylesList" class="sidebar-list"></div>
+      </section>
+
+      <section class="drawer-panel" id="sidebarPanelFiles" data-panel="files" hidden>
+        <div class="drawer-section-head">
+          <div>
+            <h2>Files</h2>
+            <p>Recently opened Markdown files with secure browser file handles when supported.</p>
+          </div>
+          <button class="mini-button" id="sidebarOpenFileBtn">Open</button>
+        </div>
+        <div id="filesList" class="sidebar-list"></div>
+        <p class="browser-note" id="fileAccessNote"></p>
+      </section>
+
+      <section class="drawer-panel settings-panel" id="sidebarPanelSettings" data-panel="settings" hidden>
+        <div class="drawer-section-head">
+          <div>
+            <h2>Settings</h2>
+            <p>Workspace preferences are stored locally in this browser.</p>
+          </div>
+        </div>
+
+        <div class="settings-stack">
+          <label>Theme
+            <select id="settingsTheme">
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <label>Editor theme
+            <select id="settingsEditorTheme">
+              <option value="github">GitHub</option>
+              <option value="jupyter">Jupyter</option>
+              <option value="midnight">Midnight</option>
+            </select>
+          </label>
+          <label>Default preview mode
+            <select id="settingsPreviewMode">
+              <option value="html">HTML</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </label>
+          <label>Tab width (spaces)
+            <input id="settingsTabSize" type="number" min="1" max="8" value="2" />
+          </label>
+          <label>Default inserted image width (%)
+            <input id="settingsImageWidth" type="number" min="10" max="100" value="50" />
+          </label>
+          <label class="check-row"><input id="settingsAutosave" type="checkbox" checked /> Autosave edits in this browser</label>
+          <label class="check-row"><input id="settingsRememberDocument" type="checkbox" checked /> Restore the last document on startup</label>
+          <button class="button danger" id="resetAppDataBtn" type="button">Reset local app data</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="drawer-footer">
+      <button class="drawer-settings-button" id="sidebarSettingsBtn">
+        <span>⚙</span><span>Settings</span>
+      </button>
+      <div class="drawer-copyright">© <span id="copyrightYear"></span> MarkDownPublish</div>
+    </div>
+  </aside>
+
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="MarkDownPublish home" title="MarkDownPublish">
@@ -50,23 +136,24 @@
 
       <nav class="top-actions" aria-label="Document actions">
         <button class="button ghost" id="newDocBtn" title="New document">New</button>
-        <label class="button ghost file-button" title="Open Markdown file">
-          Open
-          <input type="file" id="openFileInput" accept=".md,.markdown,text/markdown,text/plain" hidden />
-        </label>
-        <button class="button ghost" id="saveMdBtn" title="Download Markdown (Ctrl/Cmd+S)">Save .md</button>
-        <button class="button ghost" id="exportHtmlBtn" title="Download a standalone HTML file">Export HTML</button>
+        <button class="button ghost" id="openFileBtn" title="Open Markdown file">Open</button>
+        <input type="file" id="openFileInput" accept=".md,.markdown,text/markdown,text/plain" hidden />
+        <button class="button ghost" id="saveMdBtn" title="Save Markdown as a file (Ctrl/Cmd+S)">Save as .md</button>
+        <button class="button ghost" id="exportHtmlBtn" title="Save a standalone HTML file">Export HTML</button>
         <button class="button primary" id="printPdfBtn" title="Open the browser Print dialog for Save as PDF">Print / PDF</button>
         <button class="icon-button" id="themeToggleBtn" title="Toggle dark/light mode" aria-label="Toggle dark/light mode">☾</button>
       </nav>
     </header>
 
     <section class="controlbar" aria-label="Editor controls">
+      <button class="burger-button" id="openSidebarBtn" aria-label="Open workspace sidebar" title="Styles, files, and settings">☰</button>
+
       <div class="control-group">
         <span class="control-label">Format</span>
         <button class="tool-button" data-action="bold" title="Bold (Ctrl/Cmd+B)"><b>B</b></button>
         <button class="tool-button" data-action="italic" title="Italic (Ctrl/Cmd+I)"><i>I</i></button>
         <button class="tool-button" data-action="quote" title="Block quotation">❯</button>
+        <button class="tool-button text-tool" data-action="inlinecode" title="Inline code">&lt;/&gt;</button>
       </div>
 
       <div class="control-group">
@@ -84,87 +171,32 @@
         <button class="tool-button" data-action="h1">H1</button>
         <button class="tool-button" data-action="h2">H2</button>
         <button class="tool-button" data-action="h3">H3</button>
+        <button class="tool-button" data-action="h4">H4</button>
+        <button class="tool-button" data-action="h5">H5</button>
+        <button class="tool-button" data-action="styleStudio" title="Document style studio" aria-label="Open document style studio">⚙</button>
       </div>
 
       <div class="control-group">
         <span class="control-label">Content</span>
-        <label class="tool-button text-tool file-button">Image<input type="file" id="imageInput" accept="image/*" hidden /></label>
+        <button class="tool-button text-tool" data-action="image">Image</button>
         <button class="tool-button text-tool" data-action="link">Link</button>
-        <button class="tool-button text-tool" data-action="code">Code</button>
+        <button class="tool-button text-tool" data-action="code">Code block</button>
       </div>
 
       <div class="control-group">
         <span class="control-label">Extra</span>
         <button class="tool-button text-tool" data-action="hr">Rule</button>
+        <button class="tool-button text-tool" data-action="spacing">Space</button>
         <button class="tool-button text-tool" data-action="pagebreak">Page break</button>
         <button class="tool-button text-tool" data-action="headerfooter">Header / footer</button>
       </div>
 
-      <div class="control-group settings-group">
-        <label class="select-wrap">Editor font
-          <select id="editorFontSelect" title="Uses fonts installed on this device; unavailable fonts fall back automatically.">
-            <optgroup label="Local / academic">
-              <option value="'MDP Lemon Milk', 'LEMON MILK', 'Lemon Milk', Arial, sans-serif">Lemon Milk</option>
-              <option value="'MDP CMU Serif', 'CMU Serif', 'Computer Modern', 'Latin Modern Roman', serif">CMU Serif</option>
-              <option value="'MDP CMU Sans', 'CMU Sans Serif', 'Computer Modern Sans', Arial, sans-serif">CMU Sans Serif</option>
-              <option value="'MDP CMU Typewriter', 'CMU Typewriter Text', 'Latin Modern Mono', monospace">CMU Typewriter</option>
-              <option value="'MDP Latin Modern Roman', 'Latin Modern Roman', 'CMU Serif', serif">Latin Modern Roman</option>
-              <option value="'MDP Latin Modern Mono', 'Latin Modern Mono', 'CMU Typewriter Text', monospace">Latin Modern Mono</option>
-              <option value="'MDP Quicksand', Quicksand, 'Avenir Next', Arial, sans-serif">Quicksand</option>
-            </optgroup>
-            <optgroup label="Coding / monospace">
-              <option value="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" selected>System Mono</option>
-              <option value="'MDP JetBrains Mono', 'JetBrains Mono', Consolas, monospace">JetBrains Mono</option>
-              <option value="'MDP Fira Code', 'Fira Code', Consolas, monospace">Fira Code</option>
-              <option value="'MDP Source Code Pro', 'Source Code Pro', Consolas, monospace">Source Code Pro</option>
-              <option value="'Cascadia Code', 'Cascadia Mono', Consolas, monospace">Cascadia Code</option>
-              <option value="Consolas, 'Courier New', monospace">Consolas</option>
-              <option value="'Courier New', Courier, monospace">Courier New</option>
-            </optgroup>
-            <optgroup label="System / reading">
-              <option value="Georgia, 'Times New Roman', serif">Georgia</option>
-              <option value="'Times New Roman', Times, serif">Times New Roman</option>
-              <option value="Garamond, 'EB Garamond', Georgia, serif">Garamond</option>
-              <option value="Baskerville, 'Baskerville Old Face', Georgia, serif">Baskerville</option>
-              <option value="Arial, Helvetica, sans-serif">Arial</option>
-              <option value="Helvetica, Arial, sans-serif">Helvetica</option>
-              <option value="Verdana, Geneva, sans-serif">Verdana</option>
-              <option value="'Trebuchet MS', Arial, sans-serif">Trebuchet MS</option>
-            </optgroup>
-          </select>
+      <div class="control-group settings-group compact-font-controls">
+        <label class="input-wrap">Editor font
+          <input id="editorFontInput" list="fontSuggestions" value="System Mono" placeholder="Type an installed font" autocomplete="off" />
         </label>
-        <label class="select-wrap">Preview font
-          <select id="previewFontSelect" title="Uses fonts installed on this device; unavailable fonts fall back automatically.">
-            <optgroup label="Local / academic">
-              <option value="'MDP CMU Serif', 'CMU Serif', 'Computer Modern', 'Latin Modern Roman', serif">CMU Serif</option>
-              <option value="'MDP Latin Modern Roman', 'Latin Modern Roman', 'CMU Serif', serif">Latin Modern Roman</option>
-              <option value="'MDP Quicksand', Quicksand, 'Avenir Next', Arial, sans-serif">Quicksand</option>
-              <option value="'MDP Lemon Milk', 'LEMON MILK', 'Lemon Milk', Arial, sans-serif">Lemon Milk</option>
-              <option value="'MDP CMU Sans', 'CMU Sans Serif', 'Computer Modern Sans', Arial, sans-serif">CMU Sans Serif</option>
-            </optgroup>
-            <optgroup label="Academic / serif">
-              <option value="Georgia, 'Times New Roman', serif" selected>Academic Serif (Georgia)</option>
-              <option value="'Times New Roman', Times, serif">Times New Roman</option>
-              <option value="Garamond, 'EB Garamond', Georgia, serif">Garamond</option>
-              <option value="Baskerville, 'Baskerville Old Face', Georgia, serif">Baskerville</option>
-              <option value="'Palatino Linotype', Palatino, 'Book Antiqua', serif">Palatino</option>
-              <option value="Cambria, Georgia, serif">Cambria</option>
-            </optgroup>
-            <optgroup label="Sans serif">
-              <option value="Inter, ui-sans-serif, system-ui, sans-serif">System Sans</option>
-              <option value="Arial, Helvetica, sans-serif">Arial</option>
-              <option value="Helvetica, Arial, sans-serif">Helvetica</option>
-              <option value="Verdana, Geneva, sans-serif">Verdana</option>
-              <option value="'Trebuchet MS', Arial, sans-serif">Trebuchet MS</option>
-              <option value="'Century Gothic', CenturyGothic, AppleGothic, sans-serif">Century Gothic</option>
-            </optgroup>
-            <optgroup label="Monospace">
-              <option value="'MDP CMU Typewriter', 'CMU Typewriter Text', 'Latin Modern Mono', monospace">CMU Typewriter</option>
-              <option value="'MDP Latin Modern Mono', 'Latin Modern Mono', 'CMU Typewriter Text', monospace">Latin Modern Mono</option>
-              <option value="'MDP JetBrains Mono', 'JetBrains Mono', Consolas, monospace">JetBrains Mono</option>
-              <option value="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">System Mono</option>
-            </optgroup>
-          </select>
+        <label class="input-wrap">Preview font
+          <input id="previewFontInput" list="fontSuggestions" value="Georgia" placeholder="Type an installed font" autocomplete="off" />
         </label>
         <label class="select-wrap">Editor theme
           <select id="editorThemeSelect">
@@ -175,6 +207,33 @@
         </label>
       </div>
     </section>
+
+    <datalist id="fontSuggestions">
+      <option value="Lemon Milk"></option>
+      <option value="CMU Serif"></option>
+      <option value="CMU Sans Serif"></option>
+      <option value="CMU Typewriter Text"></option>
+      <option value="Latin Modern Roman"></option>
+      <option value="Latin Modern Mono"></option>
+      <option value="Quicksand"></option>
+      <option value="JetBrains Mono"></option>
+      <option value="Fira Code"></option>
+      <option value="Source Code Pro"></option>
+      <option value="Cascadia Code"></option>
+      <option value="Consolas"></option>
+      <option value="Courier New"></option>
+      <option value="Georgia"></option>
+      <option value="Times New Roman"></option>
+      <option value="Garamond"></option>
+      <option value="Baskerville"></option>
+      <option value="Palatino Linotype"></option>
+      <option value="Cambria"></option>
+      <option value="Arial"></option>
+      <option value="Helvetica"></option>
+      <option value="Verdana"></option>
+      <option value="Trebuchet MS"></option>
+      <option value="Century Gothic"></option>
+    </datalist>
 
     <main class="workspace" id="workspace">
       <section class="pane editor-pane" aria-label="Markdown editor">
@@ -208,7 +267,7 @@
 
     <footer class="statusbar">
       <div><span id="wordCount">0 words</span><span class="status-sep">•</span><span id="charCount">0 characters</span><span class="status-sep">•</span><span id="readingTime">0 min read</span></div>
-      <div><span id="autosaveIndicator">Autosave on</span><span class="status-sep">•</span><span>Local-first</span></div>
+      <div><span id="activeStyleStatus">Default Academic</span><span class="status-sep">•</span><span id="autosaveIndicator">Autosave on</span><span class="status-sep">•</span><span>Local-first</span></div>
     </footer>
   </div>
 
@@ -248,6 +307,60 @@
     </form>
   </dialog>
 
+  <dialog id="imageDialog" class="modal">
+    <form method="dialog" class="modal-card wide-modal" id="imageForm">
+      <div class="modal-head"><h2>Add image</h2><button value="cancel" class="icon-button" aria-label="Close">×</button></div>
+      <p>Use a URL or cache an image locally in this browser. Local images are referenced by a short asset ID instead of a long base64 line.</p>
+      <div class="source-toggle">
+        <label><input type="radio" name="imageSource" value="url" checked /> Image URL</label>
+        <label><input type="radio" name="imageSource" value="device" /> Upload from device</label>
+      </div>
+      <div id="imageUrlFields" class="source-fields">
+        <label>Image URL<input id="imageUrlInput" type="url" placeholder="https://example.com/figure.png" /></label>
+      </div>
+      <div id="imageDeviceFields" class="source-fields" hidden>
+        <label>Image file<input id="imageDeviceInput" type="file" accept="image/*" /></label>
+        <div class="browser-note">The image is stored in MarkDownPublish's browser-local IndexedDB cache. The Markdown contains only a short <code>mdp-asset://…</code> reference.</div>
+      </div>
+      <div class="form-grid two">
+        <label>Alt text<input id="imageAltInput" type="text" placeholder="Figure description" /></label>
+        <label>Width (%)<input id="imageWidthInput" type="number" min="10" max="100" value="50" /></label>
+      </div>
+      <div class="modal-actions"><button value="cancel" class="button ghost">Cancel</button><button id="insertImageBtn" value="default" class="button primary">Insert image</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="spacingDialog" class="modal">
+    <form method="dialog" class="modal-card" id="spacingForm">
+      <div class="modal-head"><h2>Insert vertical space</h2><button value="cancel" class="icon-button" aria-label="Close">×</button></div>
+      <p>Add explicit whitespace between sections without inserting repeated blank Markdown lines.</p>
+      <div class="form-grid two">
+        <label>Gap<input id="spacingValue" type="number" min="1" max="500" value="24" /></label>
+        <label>Unit<select id="spacingUnit"><option value="px">px</option><option value="rem">rem</option><option value="em">em</option><option value="mm">mm</option></select></label>
+      </div>
+      <div class="modal-actions"><button value="cancel" class="button ghost">Cancel</button><button id="insertSpacingBtn" value="default" class="button primary">Insert space</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="styleStudioDialog" class="modal style-studio-modal">
+    <form method="dialog" class="modal-card style-studio-card" id="styleStudioForm">
+      <div class="modal-head">
+        <div><h2>Document Style Studio</h2><p>Customize typography and spacing, then save the configuration as a reusable style.</p></div>
+        <button value="cancel" class="icon-button" aria-label="Close">×</button>
+      </div>
+      <div class="style-name-row">
+        <label>Style name<input id="styleNameInput" type="text" placeholder="My Academic Style" /></label>
+        <input id="styleEditingId" type="hidden" />
+      </div>
+      <div id="styleStudioFields" class="style-studio-fields"></div>
+      <div class="modal-actions sticky-actions">
+        <button value="cancel" class="button ghost">Cancel</button>
+        <button id="applyStyleBtn" value="default" class="button ghost" type="button">Apply without saving</button>
+        <button id="saveStyleBtn" value="default" class="button primary" type="button">Save style</button>
+      </div>
+    </form>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="vendor/marked/marked.js"></script>
@@ -255,6 +368,7 @@
   <script src="vendor/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML-full"></script>
   <script src="assets/js/markdown.js"></script>
   <script src="assets/js/export.js"></script>
+  <script src="assets/js/storage.js"></script>
   <script src="assets/js/app.js"></script>
 </body>
 </html>
