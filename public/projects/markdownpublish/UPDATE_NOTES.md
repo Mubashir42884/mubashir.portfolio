@@ -1,5 +1,41 @@
 # MarkDownPublish — Update Notes
 
+## Version 2.1.0 — 2026-09-27
+
+This release addresses print artifacts, unreadable dark-mode previews, selection-specific formatting, page-layout controls, compact toolbars, and laptop responsiveness. Version 2.0 user data and document metadata remain supported.
+
+### Fixed
+
+- **Clean white PDF output:** The print stylesheet now removes preview-pane shadows, editor chrome, theme backgrounds, borders, filters, and decorative page-break overlays. Printing in dark mode forces white paper and print-readable default foregrounds.
+- **Dark-mode text contrast:** Built-in/automatic style colors now resolve inside the body theme scope; headings, paragraphs, list items, quotes, and code no longer retain dark foregrounds when the preview background switches to dark.
+- **Responsive split editor:** Markdown and preview stay side by side at laptop/tablet widths of **600 px and up**, with adjustable pane widths where space permits. Phone-sized screens below 600 px stack intentionally.
+- **Toolbar scrolling:** Groups wrap within available space and use compact icon buttons instead of a horizontal toolbar scrollbar.
+
+### Added
+
+- **Selection-specific text size** menu (9–32 pt) in Format; size changes wrap only the current selection in an editable `<span class="mdp-custom-text">` tag in Markdown.
+- **Custom selected-text formatter** (Aa✦): optional installed font, size, explicit color or theme-aware inherited color, plus alignment. Alignment other than “Inherit” makes the selected span a full-width block.
+- **Page / PDF Layout dialog** with A2, A3, A4, and Letter; portrait or landscape; none, minimum, normal, wide, and custom margins in millimeters; and one or two columns.
+- **Per-document page-layout metadata:** Layout choices are stored in the existing `MDP-SETTINGS` comment so they travel with the Markdown file. Existing files without layout metadata use your browser preference.
+- **More focused Document Style Studio:** H1–H5, paragraphs, quotes, code boxes, and running header/footer independently support font, size, color, alignment, and *space before / space after*. Quotes and code boxes also support background colors; code has automatic/light/dark/warm presets. Styles can use theme-aware automatic colors or explicit custom colors.
+- **Compact toolbar icons:** Table grid, image paperclip, chain link, code window, three-dash rule, torn page for page break, and H/F for header/footer. Heading toolbar now shows H1, H2, H3, and Custom; H4/H5 remain available in Style Studio and manually via Markdown.
+- `assets/js/layout.js` consolidates page-size, orientation, margins, and column defaults for preview and export.
+- `tests/layout-export-test.js` adds layout, export, toolbar, and print-style regression checks.
+
+### Important print and browser limitations
+
+- Print / PDF still uses the browser's print engine. It is **not** a pixel-perfect pagination system: page breaks around tall tables, large equations, images, two-column content, and running headers can vary among browsers. The browser print dialog may override the selected paper size, orientation, or margins; select “Save as PDF” and verify its paper settings before saving.
+- PDF preview simulates paper width and columns but does not calculate every printed page boundary. For exact pagination, use the browser Print Preview.
+- Fonts typed by users must be installed on the device; export does not embed proprietary local font binaries. A different device may use fallback fonts and change wrapping.
+- Explicit **custom** light text colors or very dark box backgrounds are printed as requested and may have poor contrast on white PDF paper. The new **Auto text color** and **Auto box color** options are theme-aware and use print-safe defaults.
+- Browser file handles, IndexedDB image cache, and Save As dialog capability still depend on browser support and permissions. For the fullest workflow, use a current Chrome/Edge release on HTTPS or localhost. The project has no new runtime library dependency.
+
+### Migration
+
+Copy the update overlay into your existing project and allow matching source files to be replaced. Do **not** delete your browser's local storage/IndexedDB if you want to preserve existing saved styles, autosaved drafts, file-history handles, or image cache. Old `.md` files remain compatible.
+
+---
+
 ## Version 2.0.0 — 2026-09-19
 
 This release is a major workspace update focused on custom academic styling, local-first file workflows, cleaner image insertion, and more deliberate document controls.

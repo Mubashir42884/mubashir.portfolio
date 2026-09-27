@@ -56,31 +56,31 @@
     rememberDocument: true,
     previewMode: 'html',
     tabSize: 2,
-    imageWidth: 50
+    imageWidth: 50,
+    layout: { pageSize: 'A4', orientation: 'portrait', margins: 'normal', custom: [18, 18, 18, 18], columns: 1 }
   };
 
+  // Legacy saved presets remain loadable; obsolete lineHeight / letterSpacing fields
+  // are intentionally replaced by before/after paragraph spacing.
   const STYLE_TARGETS = [
-    { key: 'h1', label: 'Heading H1', size: '2rem', color: '#252a2e', align: 'left', lineHeight: '1.20', letterSpacing: '-0.04em', font: '' },
-    { key: 'h2', label: 'Heading H2', size: '1.42rem', color: '#252a2e', align: 'left', lineHeight: '1.25', letterSpacing: '-0.025em', font: '' },
-    { key: 'h3', label: 'Heading H3', size: '1.12rem', color: '#252a2e', align: 'left', lineHeight: '1.30', letterSpacing: '0em', font: '' },
-    { key: 'h4', label: 'Heading H4', size: '1rem', color: '#252a2e', align: 'left', lineHeight: '1.35', letterSpacing: '0em', font: '' },
-    { key: 'h5', label: 'Heading H5', size: '0.92rem', color: '#252a2e', align: 'left', lineHeight: '1.40', letterSpacing: '0.01em', font: '' },
-    { key: 'p', label: 'Paragraph', size: '1rem', color: '#252a2e', align: 'left', lineHeight: '1.72', letterSpacing: '0em', font: '' },
-    { key: 'quote', label: 'Quotation', size: '1rem', color: '#71777d', align: 'left', lineHeight: '1.65', letterSpacing: '0em', font: '' },
-    { key: 'code', label: 'Code', size: '0.88em', color: '#252a2e', align: 'left', lineHeight: '1.55', letterSpacing: '0em', font: 'System Mono' }
+    { key:'h1', label:'Heading H1', size:'2rem', color:'#252a2e', font:'', before:'0px', after:'18px' },
+    { key:'h2', label:'Heading H2', size:'1.42rem', color:'#252a2e', font:'', before:'26px', after:'12px' },
+    { key:'h3', label:'Heading H3', size:'1.12rem', color:'#252a2e', font:'', before:'20px', after:'10px' },
+    { key:'h4', label:'Heading H4', size:'1rem', color:'#252a2e', font:'', before:'16px', after:'8px' },
+    { key:'h5', label:'Heading H5', size:'.92rem', color:'#252a2e', font:'', before:'14px', after:'7px' },
+    { key:'p', label:'Paragraph', size:'1rem', color:'#252a2e', font:'', before:'0px', after:'16px' },
+    { key:'quote', label:'Quotation box', size:'1rem', color:'#5d6468', font:'', before:'18px', after:'18px', background:'#f2f5f1' },
+    { key:'code', label:'Code box', size:'.88em', color:'#252a2e', font:'System Mono', before:'18px', after:'18px', background:'#f3f4f5' },
+    { key:'header', label:'Page header', size:'9pt', color:'#666666', font:'', before:'0px', after:'0px' },
+    { key:'footer', label:'Page footer', size:'9pt', color:'#666666', font:'', before:'0px', after:'0px' }
   ];
 
   const BUILTIN_STYLE = {
-    id: 'builtin-default',
-    name: 'Default Academic',
-    builtin: true,
-    targets: Object.fromEntries(STYLE_TARGETS.map(target => [target.key, {
-      font: target.font,
-      size: target.size,
-      color: target.color,
-      align: target.align,
-      lineHeight: target.lineHeight,
-      letterSpacing: target.letterSpacing
+    id: 'builtin-default', name: 'Default Academic', builtin: true, codeTheme: 'auto',
+    targets: Object.fromEntries(STYLE_TARGETS.map(def => [def.key, {
+      font: def.font, size: def.size, color: def.color, colorMode: 'auto',
+      align: 'left', before: def.before, after: def.after,
+      ...(def.background ? { background: def.background, backgroundMode: 'auto' } : {})
     }]))
   };
 
@@ -167,7 +167,9 @@ Explain what the results mean, relevant limitations, and implications.
         };
       } catch (_) {}
     }
-    return Object.assign({}, DEFAULT_PREFS, loaded);
+    const result = Object.assign({}, DEFAULT_PREFS, loaded);
+    result.layout = window.MDPLayout.normalize(result.layout);
+    return result;
   }
 
   function persistPrefs(extra) {
@@ -190,7 +192,7 @@ Explain what the results mean, relevant limitations, and implications.
 
   function sanitizeCssLength(value, fallback) {
     const raw = String(value || '').trim();
-    return /^-?\d*\.?\d+(px|rem|em|pt|%|mm|cm|ch|ex|vw|vh)$/.test(raw) ? raw : fallback;
+    return /^(?:0|(?:[0-9]{1,3}(?:\.[0-9]{1,2})?|\.[0-9]{1,2})(?:px|rem|em|pt|%|mm|cm))$/.test(raw) ? raw : fallback;
   }
 
   function sanitizeLineHeight(value, fallback) {
@@ -210,17 +212,20 @@ Explain what the results mean, relevant limitations, and implications.
   function normalizeStyle(style) {
     const normalized = cloneStyle(BUILTIN_STYLE);
     normalized.id = style && style.id ? style.id : `style-${Date.now()}`;
-    normalized.name = String(style && style.name ? style.name : 'Custom Style').trim().slice(0, 80) || 'Custom Style';
+    normalized.name = String(style && style.name ? style.name : 'Custom Style').trim().slice(0,80) || 'Custom Style';
     normalized.builtin = Boolean(style && style.builtin);
+    normalized.codeTheme = ['auto', 'light', 'dark', 'warm'].includes(style && style.codeTheme) ? style.codeTheme : 'auto';
     STYLE_TARGETS.forEach(def => {
       const source = style && style.targets && style.targets[def.key] ? style.targets[def.key] : {};
       normalized.targets[def.key] = {
-        font: String(source.font || def.font || '').trim().slice(0, 120),
+        font: String(source.font || def.font || '').trim().slice(0,120),
         size: sanitizeCssLength(source.size, def.size),
         color: sanitizeColor(source.color, def.color),
+        colorMode: ['auto','custom'].includes(source.colorMode) ? source.colorMode : (style && style.builtin ? 'auto' : source.color ? 'custom' : 'auto'),
         align: sanitizeAlign(source.align),
-        lineHeight: sanitizeLineHeight(source.lineHeight, def.lineHeight),
-        letterSpacing: sanitizeCssLength(source.letterSpacing, def.letterSpacing)
+        before: sanitizeCssLength(source.before, def.before),
+        after: sanitizeCssLength(source.after, def.after),
+        ...(def.background ? { background: sanitizeColor(source.background, def.background), backgroundMode: ['auto','custom'].includes(source.backgroundMode) ? source.backgroundMode : (style && style.builtin ? 'auto' : source.background ? 'custom' : 'auto') } : {})
       };
     });
     return normalized;
@@ -246,37 +251,41 @@ Explain what the results mean, relevant limitations, and implications.
 
   function applyStylePreset(style, options) {
     const clean = normalizeStyle(style || BUILTIN_STYLE);
-    const root = document.documentElement;
+    // Apply on BODY, not HTML: dark-mode tokens live on body; computing var(--ink)
+    // on the root previously froze the light color and made dark text invisible.
+    const scope = document.body;
     STYLE_TARGETS.forEach(def => {
-      const target = clean.targets[def.key];
-      root.style.setProperty(`--mdp-${def.key}-font`, target.font ? sanitizeFontName(target.font, def.key === 'code' ? 'mono' : 'serif') : (def.key === 'code' ? 'var(--editor-font)' : 'var(--preview-font)'));
-      root.style.setProperty(`--mdp-${def.key}-size`, target.size);
-      const displayColor = clean.builtin ? (def.key === 'quote' ? 'var(--muted)' : 'var(--ink)') : target.color;
-      root.style.setProperty(`--mdp-${def.key}-color`, displayColor);
-      root.style.setProperty(`--mdp-${def.key}-align`, target.align);
-      root.style.setProperty(`--mdp-${def.key}-line`, target.lineHeight);
-      root.style.setProperty(`--mdp-${def.key}-letter`, target.letterSpacing);
+      const t = clean.targets[def.key];
+      scope.style.setProperty(`--mdp-${def.key}-font`, t.font ? sanitizeFontName(t.font, def.key === 'code' ? 'mono' : 'serif') : (def.key === 'code' ? 'var(--editor-font)' : 'var(--preview-font)'));
+      scope.style.setProperty(`--mdp-${def.key}-size`, t.size);
+      scope.style.setProperty(`--mdp-${def.key}-color`, t.colorMode === 'auto' ? (['quote','header','footer'].includes(def.key) ? 'var(--muted)' : 'var(--ink)') : t.color);
+      scope.style.setProperty(`--mdp-${def.key}-align`, t.align);
+      scope.style.setProperty(`--mdp-${def.key}-before`, t.before);
+      scope.style.setProperty(`--mdp-${def.key}-after`, t.after);
+      if (def.background) scope.style.setProperty(`--mdp-${def.key}-bg`, t.backgroundMode === 'auto' ? (def.key === 'quote' ? 'var(--accent-soft)' : 'var(--surface-2)') : t.background);
     });
     activeStyle = clean;
+    scope.dataset.codeTheme = clean.codeTheme;
     if (!options || options.persist !== false) {
       activeStyleId = clean.id;
       localStorage.setItem(ACTIVE_STYLE_KEY, clean.id);
     }
     activeStyleStatus.textContent = options && options.unsaved ? `${clean.name} (unsaved)` : clean.name;
     renderStylesList();
+    updateHighlightTheme();
   }
 
   function buildStyleCss(style) {
     const clean = normalizeStyle(style || BUILTIN_STYLE);
-    const selectorMap = {
-      h1: '.document h1', h2: '.document h2', h3: '.document h3', h4: '.document h4', h5: '.document h5',
-      p: '.document p', quote: '.document blockquote', code: '.document code'
-    };
+    const selectors = {h1:'h1',h2:'h2',h3:'h3',h4:'h4',h5:'h5',p:'p',quote:'blockquote',code:'pre, .document :not(pre) > code',header:'.print-header',footer:'.print-footer'};
     return STYLE_TARGETS.map(def => {
-      const target = clean.targets[def.key];
-      const font = target.font ? sanitizeFontName(target.font, def.key === 'code' ? 'mono' : 'serif') : (def.key === 'code' ? sanitizeFontName(prefs.editorFontName, 'mono') : sanitizeFontName(prefs.previewFontName, 'serif'));
-      return `${selectorMap[def.key]}{font-family:${font};font-size:${target.size};color:${target.color};text-align:${target.align};line-height:${target.lineHeight};letter-spacing:${target.letterSpacing};}`;
-    }).join('\n');
+      const t = clean.targets[def.key];
+      const font = t.font ? sanitizeFontName(t.font, def.key === 'code' ? 'mono' : 'serif') : (def.key === 'code' ? sanitizeFontName(prefs.editorFontName, 'mono') : sanitizeFontName(prefs.previewFontName, 'serif'));
+      const color = t.colorMode === 'auto' ? (['quote','header','footer'].includes(def.key) ? '#52606b' : '#252a2e') : t.color;
+      const extra = def.background ? `background-color:${t.backgroundMode === 'auto' ? (def.key === 'quote' ? '#f2f5f1' : '#f3f4f5') : t.background};` : '';
+      const selector = def.key === 'header' || def.key === 'footer' ? selectors[def.key] : `.document ${selectors[def.key]}`;
+      return `${selector}{font-family:${font};font-size:${t.size};color:${color};text-align:${t.align};margin-block-start:${t.before};margin-block-end:${t.after};${extra}}`;
+    }).join('\n') + '\n.document blockquote p{font:inherit;color:inherit;text-align:inherit;margin:0;}\n.document pre code{font:inherit;color:inherit;}';
   }
 
   function applyFontPreferences() {
@@ -309,6 +318,9 @@ Explain what the results mean, relevant limitations, and implications.
       editor.value = starterMarkdown;
     }
 
+    const documentLayout = window.MDPMarkdown.parseDocumentSettings(editor.value).layout;
+    if (documentLayout) prefs.layout = window.MDPLayout.normalize(documentLayout);
+    applyPageLayout(prefs.layout);
     activeStyle = findStyle(activeStyleId);
     activeStyleId = activeStyle.id;
     applyStylePreset(activeStyle);
@@ -407,7 +419,8 @@ Explain what the results mean, relevant limitations, and implications.
   function applyPrintSettings(settings) {
     document.getElementById('printHeader').textContent = settings.header || '';
     document.getElementById('printFooterText').textContent = settings.footer || '';
-    document.getElementById('printPageNumber').dataset.label = settings.pageNumbers ? 'Page' : '';
+    document.getElementById('printPageNumber').dataset.label = ''; // @page margin-box counter where supported
+    applyPageLayout(settings.layout || prefs.layout);
   }
 
   function updateStats() {
@@ -519,6 +532,7 @@ Explain what the results mean, relevant limitations, and implications.
       case 'image': openImageDialog(); break;
       case 'spacing': document.getElementById('spacingDialog').showModal(); break;
       case 'styleStudio': openStyleStudio(activeStyleId === BUILTIN_STYLE.id ? null : activeStyleId); break;
+      case 'customtext': openInlineStyleDialog(); break;
     }
   }
 
@@ -619,7 +633,9 @@ Explain what the results mean, relevant limitations, and implications.
       footer: settings.footer,
       pageNumbers: settings.pageNumbers,
       mathStyles: getMathStyles(),
-      customCss: buildStyleCss(activeStyle)
+      customCss: buildStyleCss(activeStyle),
+      pageLayout: window.MDPLayout.normalize(window.MDPMarkdown.parseDocumentSettings(markdown).layout || prefs.layout),
+      codeTheme: activeStyle.codeTheme
     });
   }
 
@@ -678,8 +694,10 @@ Explain what the results mean, relevant limitations, and implications.
   }
 
   function updateHighlightTheme() {
-    const isDark = document.body.dataset.theme === 'dark' || document.body.dataset.editorTheme === 'midnight';
+    const configured = activeStyle && activeStyle.codeTheme || 'auto';
+    const isDark = configured === 'dark' || (configured === 'auto' && document.body.dataset.theme === 'dark');
     themeLink.href = isDark ? 'vendor/highlight/atom-one-dark.min.css' : 'vendor/highlight/atom-one-light.min.css';
+    document.body.dataset.codeTheme = configured;
   }
 
   function setPreviewMode(mode, persist) {
@@ -704,6 +722,9 @@ Explain what the results mean, relevant limitations, and implications.
     editor.value = String(text || '');
     titleInput.value = String(name || 'Untitled').replace(/\.(md|markdown|txt)$/i, '') || 'Untitled Report';
     currentHistoryId = historyId || null;
+    const docLayout = window.MDPMarkdown.parseDocumentSettings(editor.value).layout;
+    if (docLayout) { prefs.layout = window.MDPLayout.normalize(docLayout); persistPrefs({layout:prefs.layout}); }
+    applyPageLayout(prefs.layout);
     handleEditorChange();
     await renderFilesList();
   }
@@ -773,7 +794,8 @@ Explain what the results mean, relevant limitations, and implications.
     const settings = {
       header: document.getElementById('headerTextInput').value.trim(),
       footer: document.getElementById('footerTextInput').value.trim(),
-      pageNumbers: document.getElementById('pageNumbersInput').checked
+      pageNumbers: document.getElementById('pageNumbersInput').checked,
+      layout: window.MDPMarkdown.parseDocumentSettings(editor.value).layout || prefs.layout
     };
     const oldStart = editor.selectionStart;
     editor.value = window.MDPMarkdown.applyDocumentSettings(editor.value, settings);
@@ -834,10 +856,13 @@ Explain what the results mean, relevant limitations, and implications.
         <div class="style-controls-grid">
           <label>Font<input type="text" data-field="font" list="fontSuggestions" placeholder="Inherit preview font"></label>
           <label>Size<input type="text" data-field="size" placeholder="${def.size}"></label>
-          <label>Color<input type="color" data-field="color"></label>
+          <label>Text color<input type="color" data-field="color"></label>
+          <label class="check-row">Auto text color<input type="checkbox" data-field="autoColor"></label>
           <label>Alignment<select data-field="align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option><option value="justify">Justify</option></select></label>
-          <label>Line height<input type="number" data-field="lineHeight" min="0.5" max="5" step="0.05"></label>
-          <label>Character gap<input type="text" data-field="letterSpacing" placeholder="0em"></label>
+          <label>Space before<input type="text" data-field="before" placeholder="${def.before}" title="Space before this element, e.g. 12px"></label>
+          <label>Space after<input type="text" data-field="after" placeholder="${def.after}" title="Space after this element, e.g. 12px"></label>
+          ${def.background ? '<label>Box color<input type="color" data-field="background"></label><label class="check-row">Auto box color<input type="checkbox" data-field="autoBackground"></label>' : ''}
+          ${def.key === 'code' ? '<label>Code theme<select id="studioCodeTheme"><option value="auto">Follow page theme</option><option value="light">Light</option><option value="dark">Dark</option><option value="warm">Warm paper</option></select></label>' : ''}
         </div>
       </section>`).join('');
   }
@@ -848,34 +873,35 @@ Explain what the results mean, relevant limitations, and implications.
     document.getElementById('styleEditingId').value = editingId || '';
     STYLE_TARGETS.forEach(def => {
       const card = document.querySelector(`[data-style-target="${def.key}"]`);
-      const target = clean.targets[def.key];
-      card.querySelector('[data-field="font"]').value = target.font;
-      card.querySelector('[data-field="size"]').value = target.size;
-      card.querySelector('[data-field="color"]').value = target.color;
-      card.querySelector('[data-field="align"]').value = target.align;
-      card.querySelector('[data-field="lineHeight"]').value = target.lineHeight;
-      card.querySelector('[data-field="letterSpacing"]').value = target.letterSpacing;
+      const t = clean.targets[def.key];
+      for (const field of ['font','size','color','align','before','after']) card.querySelector(`[data-field="${field}"]`).value = t[field];
+      card.querySelector('[data-field="autoColor"]').checked = t.colorMode === 'auto';
+      card.querySelector('[data-field="color"]').disabled = t.colorMode === 'auto';
+      if (def.background) {
+        card.querySelector('[data-field="background"]').value = t.background;
+        card.querySelector('[data-field="autoBackground"]').checked = t.backgroundMode === 'auto';
+        card.querySelector('[data-field="background"]').disabled = t.backgroundMode === 'auto';
+      }
     });
+    document.getElementById('studioCodeTheme').value = clean.codeTheme;
   }
 
   function collectStyleStudio() {
     const editingId = document.getElementById('styleEditingId').value;
     const style = {
-      id: editingId || `style-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+      id: editingId || `style-${Date.now()}-${Math.random().toString(16).slice(2,8)}`,
       name: document.getElementById('styleNameInput').value.trim() || 'Custom Style',
       builtin: false,
+      codeTheme: document.getElementById('studioCodeTheme').value,
       targets: {}
     };
     STYLE_TARGETS.forEach(def => {
       const card = document.querySelector(`[data-style-target="${def.key}"]`);
-      style.targets[def.key] = {
-        font: card.querySelector('[data-field="font"]').value,
-        size: card.querySelector('[data-field="size"]').value,
-        color: card.querySelector('[data-field="color"]').value,
-        align: card.querySelector('[data-field="align"]').value,
-        lineHeight: card.querySelector('[data-field="lineHeight"]').value,
-        letterSpacing: card.querySelector('[data-field="letterSpacing"]').value
-      };
+      const t = {};
+      for (const field of ['font','size','color','align','before','after']) t[field] = card.querySelector(`[data-field="${field}"]`).value;
+      t.colorMode = card.querySelector('[data-field="autoColor"]').checked ? 'auto' : 'custom';
+      if (def.background) { t.background = card.querySelector('[data-field="background"]').value; t.backgroundMode = card.querySelector('[data-field="autoBackground"]').checked ? 'auto' : 'custom'; }
+      style.targets[def.key] = t;
     });
     return normalizeStyle(style);
   }
@@ -1058,6 +1084,103 @@ Explain what the results mean, relevant limitations, and implications.
   }
 
   // Toolbar actions
+  // A span is intentionally an inline format; when alignment is requested it becomes
+  // a full-width block, because text-align cannot align arbitrary inline runs.
+  let storedSelection = null;
+  function rememberSelection() { storedSelection = [editor.selectionStart, editor.selectionEnd]; }
+  function wrapSelectedWithStyle(style, placeholder) {
+    const [start, end] = storedSelection || [editor.selectionStart, editor.selectionEnd];
+    const selected = editor.value.slice(start,end) || placeholder || 'text';
+    const escaped = window.MDPMarkdown.escapeHtml(selected).replace(/\n/g, '<br>');
+    const markup = `<span class="mdp-custom-text" style="${style}">${escaped}</span>`;
+    editor.setRangeText(markup, start, end, 'end');
+    storedSelection = null;
+    editor.focus();
+    handleEditorChange();
+  }
+  function openInlineStyleDialog() {
+    rememberSelection();
+    document.getElementById('inlineSizeInput').value = '14pt';
+    document.getElementById('inlineFontInput').value = '';
+    document.getElementById('inlineColorInput').value = '#252a2e';
+    document.getElementById('inlineUseThemeColor').checked = true;
+    document.getElementById('inlineColorInput').disabled = true;
+    document.getElementById('inlineAlignInput').value = 'inherit';
+    document.getElementById('inlineStyleDialog').showModal();
+  }
+  function applyInlineStyle() {
+    const fontRaw = document.getElementById('inlineFontInput').value.trim();
+    const size = sanitizeCssLength(document.getElementById('inlineSizeInput').value, '14pt');
+    const color = sanitizeColor(document.getElementById('inlineColorInput').value, '#252a2e');
+    const align = document.getElementById('inlineAlignInput').value;
+    const font = fontRaw ? `font-family:${sanitizeFontName(fontRaw, 'serif')};` : '';
+    const aligned = align !== 'inherit' && ['left','center','right','justify'].includes(align);
+    const useThemeColor = document.getElementById('inlineUseThemeColor').checked;
+    const style = `${font}font-size:${size};${useThemeColor ? '' : `color:${color};`}${aligned ? `display:block;width:100%;text-align:${align};` : ''}`;
+    wrapSelectedWithStyle(style, 'selected text');
+    document.getElementById('inlineStyleDialog').close();
+  }
+  function applySelectionSize(event) {
+    const value = event.target.value;
+    if (!value) return;
+    if (value === 'custom') { openInlineStyleDialog(); }
+    else {
+      rememberSelection();
+      wrapSelectedWithStyle(`font-size:${sanitizeCssLength(value, '12pt')};`, 'text');
+    }
+    event.target.value = '';
+  }
+
+  function applyPageLayout(raw) {
+    const value = window.MDPLayout.normalize(raw);
+    const vars = window.MDPLayout.cssVars(value);
+    Object.entries(vars).forEach(([key, val]) => document.body.style.setProperty(key, val));
+    const metrics = window.MDPLayout.metrics(value);
+    const hasPageNums = Boolean(window.MDPMarkdown.parseDocumentSettings(editor.value || '').pageNumbers);
+    document.getElementById('printPageStyle').textContent = window.MDPLayout.pageRule(value) +
+      (hasPageNums && metrics.margin[2] >= 10 ? '\n@page { @bottom-right { content: "Page " counter(page); color: #555; font: 9pt Arial, sans-serif; } }' : '');
+    document.body.style.setProperty('--mdp-header-offset', `${-Math.min(15,Math.max(0,metrics.margin[0]-4))}mm`);
+    document.body.style.setProperty('--mdp-footer-offset', `${-Math.min(15,Math.max(0,metrics.margin[2]-4))}mm`);
+    document.body.dataset.printMarginTop = metrics.margin[0] >= 9 ? 'available' : 'none';
+    document.body.dataset.printMarginBottom = metrics.margin[2] >= 9 ? 'available' : 'none';
+    prefs.layout = value;
+    const summary = `${value.pageSize} ${value.orientation} · ${value.margins} margins · ${value.columns} column${value.columns === 2 ? 's' : ''}`;
+    document.getElementById('openLayoutBtn').title = `Page layout: ${summary}`;
+    return value;
+  }
+  function openLayoutDialog() {
+    const value = window.MDPLayout.normalize(prefs.layout);
+    document.getElementById('layoutPaper').value = value.pageSize;
+    document.getElementById('layoutOrientation').value = value.orientation;
+    document.getElementById('layoutMargins').value = value.margins;
+    document.getElementById('layoutColumns').value = String(value.columns);
+    ['Top','Right','Bottom','Left'].forEach((key,i) => { document.getElementById(`layoutMargin${key}`).value = String(value.custom[i]); });
+    document.getElementById('customMarginsFields').hidden = value.margins !== 'custom';
+    document.getElementById('layoutDialog').showModal();
+  }
+  function applyLayoutFromDialog() {
+    const layout = applyPageLayout({
+      pageSize: document.getElementById('layoutPaper').value,
+      orientation: document.getElementById('layoutOrientation').value,
+      margins: document.getElementById('layoutMargins').value,
+      columns: Number(document.getElementById('layoutColumns').value),
+      custom: ['Top','Right','Bottom','Left'].map(key => Number(document.getElementById(`layoutMargin${key}`).value))
+    });
+    persistPrefs({ layout });
+    // Persist the per-document layout in Markdown metadata so moving the .md
+    // to a new browser retains its intended paper settings.
+    const settings = window.MDPMarkdown.parseDocumentSettings(editor.value);
+    const start = editor.selectionStart;
+    const previousPrefix = editor.value.length - window.MDPMarkdown.stripDocumentSettings(editor.value).length;
+    editor.value = window.MDPMarkdown.applyDocumentSettings(editor.value, { ...settings, layout });
+    const nextPrefix = editor.value.length - window.MDPMarkdown.stripDocumentSettings(editor.value).length;
+    const cursor = Math.max(0, Math.min(editor.value.length, start + nextPrefix - previousPrefix));
+    editor.setSelectionRange(cursor, cursor);
+    handleEditorChange();
+    document.getElementById('layoutDialog').close();
+    showToast('Page layout applied to PDF preview and saved in document metadata.');
+  }
+
   document.querySelectorAll('[data-action]').forEach(btn => btn.addEventListener('click', () => handleToolAction(btn.dataset.action)));
 
   // Editor events
@@ -1073,6 +1196,13 @@ Explain what the results mean, relevant limitations, and implications.
   document.getElementById('printPdfBtn').addEventListener('click', () => window.print());
   document.getElementById('previewPrintBtn').addEventListener('click', () => window.print());
   document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+  document.getElementById('openLayoutBtn').addEventListener('click', openLayoutDialog);
+  document.getElementById('applyLayoutBtn').addEventListener('click', applyLayoutFromDialog);
+  document.getElementById('layoutMargins').addEventListener('change', event => { document.getElementById('customMarginsFields').hidden = event.target.value !== 'custom'; });
+  document.getElementById('selectionFontSize').addEventListener('change', applySelectionSize);
+  document.getElementById('applyInlineStyleBtn').addEventListener('click', applyInlineStyle);
+  document.getElementById('inlineUseThemeColor').addEventListener('change', e => { document.getElementById('inlineColorInput').disabled = e.target.checked; });
+  document.getElementById('styleStudioFields').addEventListener('change', e => { const card = e.target.closest('[data-style-target]'); if (!card) return; if (e.target.dataset.field === 'autoColor') card.querySelector('[data-field="color"]').disabled = e.target.checked; if (e.target.dataset.field === 'autoBackground') card.querySelector('[data-field="background"]').disabled = e.target.checked; });
   document.getElementById('newDocBtn').addEventListener('click', newDocument);
   document.getElementById('openFileBtn').addEventListener('click', openFileSmart);
   document.getElementById('openFileInput').addEventListener('change', event => {

@@ -1,20 +1,20 @@
 # MarkDownPublish
 
-MarkDownPublish is a local-first academic Markdown writing workspace with live HTML/PDF-style preview, LaTeX rendering, reusable document styles, cached local images, file history, and portable export.
+MarkDownPublish is a local-first academic Markdown writing workspace with live HTML and PDF-style preview, LaTeX rendering, reusable document styles, cached local images, file history, and portable export.
 
 ## Major features
 
 - Split Markdown editor + live rendered preview
 - GitHub-flavored Markdown tables and lists
-- Bold, italic, quotations, inline code, fenced code blocks, H1–H5, links, equations, images, horizontal rules, page breaks, and custom vertical spacing
+- Bold, italic, quotations, inline code, fenced code blocks, H1–H3 toolbar (H4–H5 via Markdown), links, equations, images, rules, page breaks, and custom vertical spacing
 - Inline and display LaTeX with bundled MathJax
 - Bullet, numbered, alphabetic, and Roman numeral lists
 - Print/PDF header, footer, and page-number metadata
-- HTML view and A4-like PDF preview mode
+- HTML view plus configurable A2/A3/A4/Letter PDF-style preview, portrait/landscape layout, margins, and 1–2 columns
 - **Save as `.md`**, standalone HTML export, rendered HTML copy, and browser Print / Save as PDF
 - Free-form editor and preview font inputs using fonts installed on the current device
 - Document Style Studio with reusable style presets for H1–H5, paragraph, quotation, and code
-- Per-style font, size, color, alignment, line-height, and character-spacing controls
+- Per-style font, size, color, alignment, and spacing before/after; quote/code box colors and running header/footer styling
 - Workspace sidebar with custom styles, file history, and settings
 - Browser-local image cache that keeps large base64 data out of the Markdown source
 - Persistent file handles in supported Chromium browsers
@@ -22,7 +22,9 @@ MarkDownPublish is a local-first academic Markdown writing workspace with live H
 - Light/dark application modes and GitHub/Jupyter/Midnight editor themes
 - Word/character counts, reading-time estimate, line/column indicator
 - Configurable autosave, tab width, preview mode, and default image width
-- Resizable editor/preview split and responsive layout
+- Resizable, side-by-side editor/preview panes at widths ≥600px; compact wrapping toolbar and intentional stacked phone layout
+- Inline font-size menu and custom selected-text font/size/color/alignment formatter
+- Clean white PDF print stylesheet with dark-mode-safe automatic text colors
 
 ## Run locally
 
@@ -79,11 +81,11 @@ The editor and preview font controls are editable text inputs. Type the name of 
 - Georgia
 - Times New Roman
 
-MarkDownPublish does not bundle font binaries. If the requested font is unavailable, the app uses a safe serif, sans-serif, or monospace fallback.
+MarkDownPublish does not bundle font binaries. If the requested font is unavailable, the app uses a safe serif, sans-serif, or monospace fallback. The standalone HTML also does not embed locally installed fonts; exported documents may reflow on other devices.
 
 ## Custom styles
 
-Open the gear icon in the **Heading** toolbar group to launch Document Style Studio. A style can define H1–H5, paragraph, quotation, and code typography independently. Saved styles appear in the sidebar under **Styles** and can be applied, edited, or deleted.
+Open **Custom** in the Heading toolbar to launch Document Style Studio. A style can define H1–H5, paragraph, quotation, code, and running header/footer typography independently. Saved styles appear in the sidebar under **Styles** and can be applied, edited, or deleted.
 
 ## File history
 
@@ -99,7 +101,7 @@ On browsers with the File System Access API:
 
 On unsupported browsers, these actions fall back to a standard download.
 
-PDF output is browser-native: choose **Print / PDF**, then choose **Save as PDF** in the print dialog.
+PDF output is browser-native: choose **Layout** to set A2/A3/A4/Letter, margins, orientation, and columns; then choose **Print / PDF** → **Save as PDF** in the browser print dialog. Browser settings can override document layout, and PDF preview is not a page-by-page layout engine. Printing forces a clean white paper background even when the editor is dark.
 
 ## Smoke test
 
@@ -107,6 +109,7 @@ If Node.js is installed:
 
 ```bash
 node tests/smoke-test.js
+node tests/layout-export-test.js
 ```
 
 ## Project structure
@@ -129,6 +132,7 @@ MarkDownPublish/
 │  │  ├─ app.js
 │  │  ├─ export.js
 │  │  ├─ markdown.js
+│  │  ├─ layout.js
 │  │  └─ storage.js
 │  └─ images/
 │     ├─ favicon.svg

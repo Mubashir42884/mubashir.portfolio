@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="vendor/highlight/atom-one-light.min.css" id="hljsTheme" />
   <link rel="stylesheet" href="assets/css/fonts.css" />
   <link rel="stylesheet" href="assets/css/styles.css" />
+  <link rel="stylesheet" media="print" href="vendor/highlight/atom-one-light.min.css" />
+  <style id="printPageStyle"></style>
   <script>
     window.MathJax = {
       jax: ["input/TeX", "output/HTML-CSS"],
@@ -140,6 +142,7 @@
         <input type="file" id="openFileInput" accept=".md,.markdown,text/markdown,text/plain" hidden />
         <button class="button ghost" id="saveMdBtn" title="Save Markdown as a file (Ctrl/Cmd+S)">Save as .md</button>
         <button class="button ghost" id="exportHtmlBtn" title="Save a standalone HTML file">Export HTML</button>
+        <button class="button ghost layout-btn" id="openLayoutBtn" type="button" title="Page size, margins, orientation and columns" aria-label="Page layout settings"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="1.5"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><span>Layout</span></button>
         <button class="button primary" id="printPdfBtn" title="Open the browser Print dialog for Save as PDF">Print / PDF</button>
         <button class="icon-button" id="themeToggleBtn" title="Toggle dark/light mode" aria-label="Toggle dark/light mode">☾</button>
       </nav>
@@ -153,13 +156,23 @@
         <button class="tool-button" data-action="bold" title="Bold (Ctrl/Cmd+B)"><b>B</b></button>
         <button class="tool-button" data-action="italic" title="Italic (Ctrl/Cmd+I)"><i>I</i></button>
         <button class="tool-button" data-action="quote" title="Block quotation">❯</button>
-        <button class="tool-button text-tool" data-action="inlinecode" title="Inline code">&lt;/&gt;</button>
+        <button class="tool-button text-tool" data-action="inlinecode" title="Inline code" aria-label="Inline code">&lt;/&gt;</button>
+        <label class="inline-size-control" title="Font size for selected text">Size
+          <select id="selectionFontSize" aria-label="Font size for selected text">
+            <option value="">Size</option><option value="9pt">9pt</option><option value="10pt">10pt</option>
+            <option value="11pt">11pt</option><option value="12pt">12pt</option><option value="14pt">14pt</option>
+            <option value="16pt">16pt</option><option value="18pt">18pt</option><option value="20pt">20pt</option>
+            <option value="24pt">24pt</option><option value="28pt">28pt</option><option value="32pt">32pt</option>
+            <option value="custom">Custom…</option>
+          </select>
+        </label>
+        <button class="tool-button custom-text-tool" data-action="customtext" aria-label="Format selected text" title="Custom selected-text formatting: font, size, color and alignment">Aa<span aria-hidden="true">✦</span></button>
       </div>
 
       <div class="control-group">
         <span class="control-label">Insert</span>
         <button class="tool-button text-tool" data-action="equation">ƒx</button>
-        <button class="tool-button text-tool" data-action="table">Table</button>
+        <button class="tool-button icon-tool" data-action="table" title="Insert table" aria-label="Insert table"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M3 14h18M9 4v16M15 4v16"/></svg></button>
         <button class="tool-button" data-action="bullets" title="Bullet list">•≡</button>
         <button class="tool-button" data-action="numbers" title="Numbered list">1.</button>
         <button class="tool-button" data-action="alpha" title="Alphabetic list">a.</button>
@@ -171,24 +184,22 @@
         <button class="tool-button" data-action="h1">H1</button>
         <button class="tool-button" data-action="h2">H2</button>
         <button class="tool-button" data-action="h3">H3</button>
-        <button class="tool-button" data-action="h4">H4</button>
-        <button class="tool-button" data-action="h5">H5</button>
-        <button class="tool-button" data-action="styleStudio" title="Document style studio" aria-label="Open document style studio">⚙</button>
+        <button class="tool-button custom-heading-tool" data-action="styleStudio" title="Customize H1–H5, paragraphs, code, quotes and running headers/footers" aria-label="Custom document styles"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.25"/><path d="M12 2.5v3m0 13v3M2.5 12h3m13 0h3M5.3 5.3l2.1 2.1m9.2 9.2 2.1 2.1M18.7 5.3l-2.1 2.1m-9.2 9.2-2.1 2.1"/></svg><span>Custom</span></button>
       </div>
 
       <div class="control-group">
         <span class="control-label">Content</span>
-        <button class="tool-button text-tool" data-action="image">Image</button>
-        <button class="tool-button text-tool" data-action="link">Link</button>
-        <button class="tool-button text-tool" data-action="code">Code block</button>
+        <button class="tool-button icon-tool" data-action="image" title="Insert image from device or URL" aria-label="Insert image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 11.5-8.8 8.8a5.1 5.1 0 0 1-7.2-7.2l9.2-9.2a3.4 3.4 0 0 1 4.8 4.8l-9.3 9.3a1.7 1.7 0 0 1-2.4-2.4l8.6-8.6"/></svg></button>
+        <button class="tool-button icon-tool" data-action="link" title="Insert link" aria-label="Insert link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5a5 5 0 0 0 7.1 0l2.1-2.1a5 5 0 0 0-7.1-7.1l-1.2 1.2M14.5 9.5a5 5 0 0 0-7.1 0l-2.1 2.1a5 5 0 0 0 7.1 7.1l1.2-1.2"/></svg></button>
+        <button class="tool-button icon-tool" data-action="code" title="Insert fenced code block" aria-label="Insert code block"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="3.5" width="19" height="17" rx="2"/><path d="m9 8-4 4 4 4m6-8 4 4-4 4m-2-9-2 10"/></svg></button>
       </div>
 
       <div class="control-group">
         <span class="control-label">Extra</span>
-        <button class="tool-button text-tool" data-action="hr">Rule</button>
-        <button class="tool-button text-tool" data-action="spacing">Space</button>
-        <button class="tool-button text-tool" data-action="pagebreak">Page break</button>
-        <button class="tool-button text-tool" data-action="headerfooter">Header / footer</button>
+        <button class="tool-button icon-tool" data-action="hr" title="Horizontal rule" aria-label="Insert horizontal rule"><svg viewBox="0 0 24 24" aria-hidden="true"><path stroke-dasharray="5 3" d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+        <button class="tool-button text-tool" data-action="spacing" title="Insert custom vertical space">↕</button>
+        <button class="tool-button icon-tool" data-action="pagebreak" title="Insert page break" aria-label="Insert page break"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2.5h14v7.2l-2.6 2.3 2.6 2.2v7.3H5v-7.3L7.6 12 5 9.7z"/><path stroke-dasharray="2.5 2" d="M2 12h20"/></svg></button>
+        <button class="tool-button text-tool" data-action="headerfooter" title="Header and footer settings" aria-label="Header and footer settings">H/F</button>
       </div>
 
       <div class="control-group settings-group compact-font-controls">
@@ -342,10 +353,46 @@
     </form>
   </dialog>
 
+  <dialog id="inlineStyleDialog" class="modal">
+    <form method="dialog" class="modal-card" id="inlineStyleForm">
+      <div class="modal-head"><h2>Format selected text</h2><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+      <p>Applies formatting only to your selection, not to the entire paragraph. Leave alignment as Inherit to keep the text inline.</p>
+      <label>Font family<input id="inlineFontInput" type="text" list="fontSuggestions" placeholder="Preview font (inherit)" /></label>
+      <div class="form-grid two">
+        <label>Font size<input id="inlineSizeInput" type="text" placeholder="e.g. 14pt or 1.2rem" value="14pt" /></label>
+        <label>Text color<input id="inlineColorInput" type="color" value="#252a2e" disabled /></label>
+      </div>
+      <label class="check-row"><input id="inlineUseThemeColor" type="checkbox" checked /> Use theme-aware text color (readable in dark mode and print)</label>
+      <label>Alignment<select id="inlineAlignInput"><option value="inherit">Inherit (inline)</option><option value="left">Left (full line)</option><option value="center">Center (full line)</option><option value="right">Right (full line)</option><option value="justify">Justify (full line)</option></select></label>
+      <div class="modal-actions"><button class="button ghost" value="cancel">Cancel</button><button class="button primary" id="applyInlineStyleBtn" type="button">Apply to selection</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="layoutDialog" class="modal">
+    <form method="dialog" class="modal-card" id="layoutForm">
+      <div class="modal-head"><h2>Page / PDF layout</h2><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+      <p>Used by the PDF preview, browser Print / PDF dialog, and standalone HTML export. The print dialog can override these settings.</p>
+      <div class="form-grid two">
+        <label>Paper<select id="layoutPaper"><option>A4</option><option>A3</option><option>A2</option><option>Letter</option></select></label>
+        <label>Orientation<select id="layoutOrientation"><option value="portrait">Portrait (vertical)</option><option value="landscape">Landscape (horizontal)</option></select></label>
+        <label>Margins<select id="layoutMargins"><option value="normal">Normal (18 mm)</option><option value="none">None (0 mm)</option><option value="minimum">Minimum (6 mm)</option><option value="wide">Wide (28 mm)</option><option value="custom">Custom</option></select></label>
+        <label>Columns<select id="layoutColumns"><option value="1">Single column</option><option value="2">Two columns</option></select></label>
+      </div>
+      <fieldset id="customMarginsFields" class="layout-custom-margins" hidden><legend>Custom margins (mm)</legend>
+        <div class="form-grid two"><label>Top<input id="layoutMarginTop" type="number" min="0" max="70" step="0.5" value="18" /></label>
+        <label>Right<input id="layoutMarginRight" type="number" min="0" max="70" step="0.5" value="18" /></label>
+        <label>Bottom<input id="layoutMarginBottom" type="number" min="0" max="70" step="0.5" value="18" /></label>
+        <label>Left<input id="layoutMarginLeft" type="number" min="0" max="70" step="0.5" value="18" /></label></div>
+      </fieldset>
+      <p class="layout-hint">For print/PDF choose Save as PDF in the browser print dialog. Disable browser headers/footers if they conflict with document headers.</p>
+      <div class="modal-actions"><button class="button ghost" value="cancel">Cancel</button><button class="button primary" id="applyLayoutBtn" type="button">Apply layout</button></div>
+    </form>
+  </dialog>
+
   <dialog id="styleStudioDialog" class="modal style-studio-modal">
     <form method="dialog" class="modal-card style-studio-card" id="styleStudioForm">
       <div class="modal-head">
-        <div><h2>Document Style Studio</h2><p>Customize typography and spacing, then save the configuration as a reusable style.</p></div>
+        <div><h2>Document Style Studio</h2><p>Customize H1–H5, paragraphs, quotation/code boxes, and running headers/footers. Set space before/after elements, then save a reusable preset.</p></div>
         <button value="cancel" class="icon-button" aria-label="Close">×</button>
       </div>
       <div class="style-name-row">
@@ -367,6 +414,7 @@
   <script src="vendor/highlight/highlight.min.js"></script>
   <script src="vendor/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML-full"></script>
   <script src="assets/js/markdown.js"></script>
+  <script src="assets/js/layout.js"></script>
   <script src="assets/js/export.js"></script>
   <script src="assets/js/storage.js"></script>
   <script src="assets/js/app.js"></script>

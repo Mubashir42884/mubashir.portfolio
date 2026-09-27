@@ -4,7 +4,7 @@
   const SETTINGS_RE = /^<!--\s*MDP-SETTINGS\s+([\s\S]*?)\s*-->\s*/;
 
   function getDefaultSettings() {
-    return { header: '', footer: '', pageNumbers: false };
+    return { header: '', footer: '', pageNumbers: false, layout: null };
   }
 
   function parseDocumentSettings(markdown) {
@@ -15,7 +15,8 @@
       return {
         header: typeof parsed.header === 'string' ? parsed.header : '',
         footer: typeof parsed.footer === 'string' ? parsed.footer : '',
-        pageNumbers: Boolean(parsed.pageNumbers)
+        pageNumbers: Boolean(parsed.pageNumbers),
+        layout: parsed.layout && typeof parsed.layout === 'object' ? parsed.layout : null
       };
     } catch (_) {
       return getDefaultSettings();
@@ -31,9 +32,10 @@
     const normalized = {
       header: settings.header || '',
       footer: settings.footer || '',
-      pageNumbers: Boolean(settings.pageNumbers)
+      pageNumbers: Boolean(settings.pageNumbers),
+      ...(settings.layout && typeof settings.layout === 'object' ? {layout: settings.layout} : {})
     };
-    const hasAny = normalized.header || normalized.footer || normalized.pageNumbers;
+    const hasAny = normalized.header || normalized.footer || normalized.pageNumbers || normalized.layout;
     return hasAny ? `<!-- MDP-SETTINGS ${JSON.stringify(normalized)} -->\n\n${body}` : body;
   }
 
