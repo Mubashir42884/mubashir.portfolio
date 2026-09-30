@@ -465,7 +465,50 @@ body[data-code-theme="warm"] .preview-document pre { background: #fff3e5; color:
   .preview-document pre .hljs, .preview-document pre .hljs * { color: #22272b !important; background: transparent !important; }
   .preview-document .page-break { border: 0 !important; outline: 0 !important; margin: 0 !important; background: transparent !important; break-after: page; page-break-after: always; column-span: all; }
   .preview-document .page-break::after { display: none !important; }
-  .preview-document img,.preview-document table,.preview-document pre,.preview-document blockquote { break-inside: avoid; }
+  /* Images and quotations should stay together where possible. Code blocks are
+     deliberately excluded: long code must be allowed to continue on the next
+     printed page instead of leaving a large blank area on the previous page. */
+  .preview-document img,.preview-document blockquote {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Tables may span pages, while individual rows should not be cut in half. */
+  .preview-document table {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  .preview-document tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* PRINT CODE PAGINATION
+     Screen code blocks are scrollable, but a printed/PDF code block must be a
+     normal fragmentable block. This lets Chromium use the space remaining on
+     the current page and continue the code naturally on the following page. */
+  .preview-document pre {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .preview-document pre code,
+  .preview-document pre .hljs {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+  }
   /* Never use fixed DOM overlays for running headers/footers. They can cover
      page content in Chromium print/PDF. Paged-media @page margin boxes are
      generated dynamically in #printPageStyle instead. */
