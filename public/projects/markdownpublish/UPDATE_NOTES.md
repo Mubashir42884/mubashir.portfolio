@@ -1,4 +1,21 @@
-# MarkDownPublish — Update Notes
+# MarkDownPublish Update Notes
+
+## 2.1.1 — Print footer overlap hotfix (2026-09-30)
+
+### Fixed
+
+- Fixed a PDF/print pagination bug where an opaque white running-footer layer could cover the final lines of page content.
+- Removed the fixed-position DOM header/footer overlay from the print pipeline. Running headers and footers now use CSS paged-media `@page` margin boxes where the browser supports them.
+- Fixed the stray `0` page-number artifact caused by evaluating `counter(page)` inside a normal DOM pseudo-element. Page numbering is now generated only inside the page margin context.
+- Removed duplicate/conflicting print CSS that allowed the older overlay implementation to remain active after the v2.1 print redesign.
+- Added a safety rule: if the selected top or bottom margin is too small to contain running text, the corresponding header/footer/page number is omitted rather than allowed to overlap or clip the document.
+- Standalone HTML export now uses the same non-overlapping paged-media header/footer implementation as the in-app Print/PDF workflow.
+
+### Compatibility note
+
+Custom running headers, footers, and page numbers depend on CSS paged-media margin-box support in the browser's print engine. On browsers without that support, MarkDownPublish intentionally omits those running elements instead of falling back to a fixed overlay that could hide document content. The document body and PDF pagination remain printable.
+
+---
 
 ## Version 2.1.0 — 2026-09-27
 

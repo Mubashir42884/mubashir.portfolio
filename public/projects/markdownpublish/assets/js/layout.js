@@ -39,5 +39,63 @@
       '--mdp-print-columns': String(value.columns)
     };
   }
-  window.MDPLayout = { DEFAULT, normalize, metrics, pageRule, cssVars };
+
+  // Running headers/footers belong in the page margin, not in fixed DOM overlays.
+  // Browsers that support CSS paged-media margin boxes will render these safely.
+  // Browsers that do not support them simply omit the running chrome rather than
+  // covering document text.
+  function cssString(value) {
+    return `"${String(value || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\r?\n/g, '\\A ')}"`;
+  }
+
+  function safeStyle(style, fallback) {
+    const raw = style && typeof style === 'object' ? style : {};
+    const align = ['left','center','right'].includes(raw.align) ? raw.align : fallback.align;
+    const fontFamily = String(raw.fontFamily || fallback.fontFamily).replace(/[{}<>;]/g, '').trim() || fallback.fontFamily;
+    const fontSize = /^(?:[0-9]{1,3}(?:\.[0-9]{1,2})?|\.[0-9]{1,2})(?:px|rem|em|pt|mm|cm)$/.test(String(raw.fontSize || '').trim())
+      ? String(raw.fontSize).trim() : fallback.fontSize;
+    const color = /^#[0-9a-f]{6}$/i.test(String(raw.color || '').trim()) ? String(raw.color).trim() : fallback.color;
+    return { align, fontFamily, fontSize, color };
+  }
+
+  function marginBoxRule(raw, options) {
+    const value = metrics(raw);
+    const opts = options && typeof options === 'object' ? options : {};
+    const header = String(opts.header || '').trim();
+    const footer = String(opts.footer || '').trim();
+    const pageNumbers = Boolean(opts.pageNumbers);
+    const headerStyle = safeStyle(opts.headerStyle, { align:'left', fontFamily:'Arial, sans-serif', fontSize:'9pt', color:'#555555' });
+    const footerStyle = safeStyle(opts.footerStyle, { align:'left', fontFamily:'Arial, sans-serif', fontSize:'9pt', color:'#555555' });
+
+    // Very small/zero margins cannot safely hold running content. Omitting it is
+    // preferable to clipping or painting over the document body.
+    const headerAllowed = value.margin[0] >= 8;
+    const footerAllowed = value.margin[2] >= 8;
+    const rules = [];
+    const boxFor = (edge, align) => `@${edge}-${align === 'center' ? 'center' : align === 'right' ? 'right' : 'left'}`;
+    const declarations = style => `font-family:${style.fontFamily};font-size:${style.fontSize};color:${style.color};`;
+
+    if (header && headerAllowed) {
+      rules.push(`${boxFor('top', headerStyle.align)} { content: ${cssString(header)}; ${declarations(headerStyle)} }`);
+    }
+
+    let footerBox = null;
+    if (footer && footerAllowed) {
+      footerBox = boxFor('bottom', footerStyle.align);
+      rules.push(`${footerBox} { content: ${cssString(footer)}; ${declarations(footerStyle)} }`);
+    }
+
+    if (pageNumbers && footerAllowed) {
+      // Keep the page number away from a right-aligned footer.
+      const pageBox = footerBox === '@bottom-right' ? '@bottom-left' : '@bottom-right';
+      rules.push(`${pageBox} { content: "Page " counter(page); font-family:Arial,sans-serif;font-size:9pt;color:#555555; }`);
+    }
+
+    return rules.length ? `@page {\n  ${rules.join('\n  ')}\n}` : '';
+  }
+
+  window.MDPLayout = { DEFAULT, normalize, metrics, pageRule, cssVars, marginBoxRule };
 })();

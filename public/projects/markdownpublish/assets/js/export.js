@@ -18,21 +18,21 @@
   function buildStandaloneHtml(options) {
     const {
       title, bodyHtml, previewFont, header, footer, pageNumbers,
-      mathStyles, customCss, pageLayout, codeTheme
+      mathStyles, customCss, pageLayout, headerStyle, footerStyle, codeTheme
     } = options;
     const escape = window.MDPMarkdown.escapeHtml;
     const layout = window.MDPLayout.metrics(pageLayout);
     const vars = Object.entries(window.MDPLayout.cssVars(pageLayout)).map(([k,v])=>`${k}:${v}`).join(';');
     const rule = window.MDPLayout.pageRule(pageLayout);
-    const heading = escape(header || '');
-    const footing = escape(footer || '');
-    const printCounter = pageNumbers && layout.margin[2] >= 10
-      ? '@bottom-right { content: "Page " counter(page); font: 9pt Arial, sans-serif; color: #555; }'
-      : '';
+    const marginBoxes = window.MDPLayout.marginBoxRule(pageLayout, {
+      header,
+      footer,
+      pageNumbers,
+      headerStyle,
+      footerStyle
+    });
     const mathCss = String(mathStyles || '').replace(/<\/style/gi, '<\\/style');
     const custom = String(customCss || '').replace(/<\/style/gi, '<\\/style');
-    const printHeader = heading && layout.margin[0] >= 9 ? `<div class="print-header">${heading}</div>` : '';
-    const printFooter = footing && layout.margin[2] >= 9 ? `<div class="print-footer">${footing}</div>` : '';
     return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title || 'Document')}</title>
 <style>
@@ -50,16 +50,17 @@ ${custom}
 ${mathCss}
 @media(max-width:560px){.document{width:100%;margin:0;min-height:0;column-count:1;padding:22px;}}
 @media print{
-${rule} ${printCounter ? `@page { ${printCounter} }` : ''}
+${rule}
+${marginBoxes}
 :root{--ink:#252a2e;--line:#d9dde0;--soft:#f5f6f7;color-scheme:light!important}html,body{background:#fff!important;color:#252a2e!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .document{margin:0!important;padding:0!important;width:auto!important;min-height:0!important;border:0!important;box-shadow:none!important;background:#fff!important;background-image:none!important;column-count:var(--mdp-print-columns)}
 .document h1,.document h2,.document h3,.document h4,.document h5{break-after:avoid}.document blockquote{background:#f5f5f5!important;color:#252a2e!important}.document blockquote p{color:inherit!important}
 .document pre,.document :not(pre)>code,.document th{background:#f5f5f5!important;color:#252a2e!important}.document pre .hljs,.document pre .hljs *{color:#252a2e!important;background:transparent!important}
 .document img,.document table,.document pre,.document blockquote{break-inside:avoid}.document .page-break{border:0!important;background:none!important;page-break-after:always;break-after:page;column-span:all}
-.print-header,.print-footer{display:block;position:fixed;left:0;right:0;background:#fff!important}.print-header{top:-10mm}.print-footer{bottom:-10mm}
+.print-header,.print-footer{display:none!important}
 }
 </style></head>
-<body>${printHeader}${printFooter}<main class="document">${bodyHtml}</main></body></html>`;
+<body><main class="document">${bodyHtml}</main></body></html>`;
   }
 
   window.MDPExport = { safeFilename, downloadBlob, buildStandaloneHtml };

@@ -21,7 +21,10 @@ const parsed = markdown.parseDocumentSettings(metadata);
 const html = exporter.buildStandaloneHtml({
   title: 'Research & Results', bodyHtml: '<h1>Report</h1><p><span class="mdp-custom-text" style="font-size:18pt">Sample</span></p>',
   previewFont: 'Georgia, serif', header:'Course', footer:'Student', pageNumbers:true,
-  mathStyles:'', customCss: '.document h1{color:#ca5b20}', pageLayout:requested, codeTheme:'auto'
+  mathStyles:'', customCss: '.document h1{color:#ca5b20}', pageLayout:requested,
+  headerStyle:{fontFamily:'Georgia, serif',fontSize:'9pt',color:'#555555',align:'left'},
+  footerStyle:{fontFamily:'Georgia, serif',fontSize:'9pt',color:'#555555',align:'left'},
+  codeTheme:'auto'
 });
 const style = fs.readFileSync(path.join(root,'assets/css/styles.css'),'utf8');
 const index = fs.readFileSync(path.join(root,'index.html'),'utf8');
@@ -37,10 +40,14 @@ const checks = [
   ['standalone HTML retains selected-text formatting', html.includes('font-size:18pt')],
   ['standalone HTML retains custom heading color', html.includes('#ca5b20')],
   ['standalone HTML forces white print paper', html.includes('background:#fff!important;background-image:none!important')],
+  ['running chrome uses @page margin boxes', html.includes('@top-left') && html.includes('@bottom-left') && html.includes('@bottom-right') && html.includes('counter(page)')],
+  ['standalone HTML has no fixed footer overlay', !html.includes('<div class="print-footer">') && !html.includes('position:fixed;left:0;right:0')],
   ['toolbar includes size and custom formatting', index.includes('id="selectionFontSize"') && index.includes('data-action="customtext"')],
   ['toolbar has H1–H3 + custom only', !index.includes('data-action="h4"') && !index.includes('data-action="h5"') && index.includes('data-action="styleStudio"')],
   ['toolbar includes layout', index.includes('id="openLayoutBtn"') && index.includes('id="layoutPaper"')],
   ['print CSS removes backgrounds and shadows', /@media print[\s\S]*background-image: none !important/.test(style) && /box-shadow: none !important/.test(style)],
+  ['legacy print overlays are disabled', /\.print-header,\.print-footer,\.print-page-number \{ display: none !important; \}/.test(style) && !/\.print-page-number::after/.test(style)],
+  ['obsolete print overlay nodes removed', !index.includes('id="printFooter"') && !index.includes('id="printPageNumber"') && !index.includes('id="printHeader"')],
   ['laptop layout remains split', /@media \(min-width: 600px\) and \(max-width: 760px\)/.test(style) && /grid-template-columns: minmax\(0,var\(--editor-width,50%\)\) 6px minmax\(0,1fr\)/.test(style)]
 ];
 let failed=0;

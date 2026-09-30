@@ -273,6 +273,12 @@ Explain what the results mean, relevant limitations, and implications.
     activeStyleStatus.textContent = options && options.unsaved ? `${clean.name} (unsaved)` : clean.name;
     renderStylesList();
     updateHighlightTheme();
+    // Header/footer typography is part of the paged-media rule, so refresh it
+    // whenever a style preset changes.
+    if (editor && window.MDPLayout) {
+      const settings = window.MDPMarkdown.parseDocumentSettings(editor.value || '');
+      applyPageLayout(settings.layout || prefs.layout);
+    }
   }
 
   function buildStyleCss(style) {
@@ -417,9 +423,10 @@ Explain what the results mean, relevant limitations, and implications.
   }
 
   function applyPrintSettings(settings) {
-    document.getElementById('printHeader').textContent = settings.header || '';
-    document.getElementById('printFooterText').textContent = settings.footer || '';
-    document.getElementById('printPageNumber').dataset.label = ''; // @page margin-box counter where supported
+    // Running headers, footers and page numbers are generated inside @page margin
+    // boxes by applyPageLayout(). They are intentionally NOT fixed DOM elements:
+    // fixed print overlays can cover the final lines of a page and can make
+    // counter(page) render as 0 in Chromium.
     applyPageLayout(settings.layout || prefs.layout);
   }
 
@@ -635,6 +642,8 @@ Explain what the results mean, relevant limitations, and implications.
       mathStyles: getMathStyles(),
       customCss: buildStyleCss(activeStyle),
       pageLayout: window.MDPLayout.normalize(window.MDPMarkdown.parseDocumentSettings(markdown).layout || prefs.layout),
+      headerStyle: pageChromeStyle('header'),
+      footerStyle: pageChromeStyle('footer'),
       codeTheme: activeStyle.codeTheme
     });
   }
@@ -1131,18 +1140,35 @@ Explain what the results mean, relevant limitations, and implications.
     event.target.value = '';
   }
 
+  function pageChromeStyle(key) {
+    const clean = normalizeStyle(activeStyle || BUILTIN_STYLE);
+    const target = clean.targets[key];
+    return {
+      fontFamily: target.font
+        ? sanitizeFontName(target.font, 'serif')
+        : sanitizeFontName(prefs.previewFontName, 'serif'),
+      fontSize: target.size,
+      color: target.colorMode === 'auto' ? '#52606b' : target.color,
+      align: ['left','center','right'].includes(target.align) ? target.align : 'left'
+    };
+  }
+
   function applyPageLayout(raw) {
     const value = window.MDPLayout.normalize(raw);
     const vars = window.MDPLayout.cssVars(value);
     Object.entries(vars).forEach(([key, val]) => document.body.style.setProperty(key, val));
-    const metrics = window.MDPLayout.metrics(value);
-    const hasPageNums = Boolean(window.MDPMarkdown.parseDocumentSettings(editor.value || '').pageNumbers);
-    document.getElementById('printPageStyle').textContent = window.MDPLayout.pageRule(value) +
-      (hasPageNums && metrics.margin[2] >= 10 ? '\n@page { @bottom-right { content: "Page " counter(page); color: #555; font: 9pt Arial, sans-serif; } }' : '');
-    document.body.style.setProperty('--mdp-header-offset', `${-Math.min(15,Math.max(0,metrics.margin[0]-4))}mm`);
-    document.body.style.setProperty('--mdp-footer-offset', `${-Math.min(15,Math.max(0,metrics.margin[2]-4))}mm`);
-    document.body.dataset.printMarginTop = metrics.margin[0] >= 9 ? 'available' : 'none';
-    document.body.dataset.printMarginBottom = metrics.margin[2] >= 9 ? 'available' : 'none';
+
+    const settings = window.MDPMarkdown.parseDocumentSettings(editor.value || '');
+    const pageRule = window.MDPLayout.pageRule(value);
+    const marginBoxes = window.MDPLayout.marginBoxRule(value, {
+      header: settings.header,
+      footer: settings.footer,
+      pageNumbers: settings.pageNumbers,
+      headerStyle: pageChromeStyle('header'),
+      footerStyle: pageChromeStyle('footer')
+    });
+    document.getElementById('printPageStyle').textContent = `${pageRule}${marginBoxes ? `\n${marginBoxes}` : ''}`;
+
     prefs.layout = value;
     const summary = `${value.pageSize} ${value.orientation} · ${value.margins} margins · ${value.columns} column${value.columns === 2 ? 's' : ''}`;
     document.getElementById('openLayoutBtn').title = `Page layout: ${summary}`;

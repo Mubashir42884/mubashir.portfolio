@@ -245,25 +245,6 @@ body[data-theme="dark"] .brand-icon-dark { display: block; }
   .statusbar { position: sticky; bottom: 0; }
 }
 
-@media print {
-  @page { size: A4; margin: 24mm 20mm 24mm; }
-  html, body { height: auto; overflow: visible; background: #fff !important; color: #111 !important; }
-  .app-shell > :not(.workspace), .editor-pane, .splitter, .preview-head { display: none !important; }
-  .app-shell, .workspace, .preview-pane, .preview-scroll { display: block !important; height: auto !important; min-height: 0 !important; overflow: visible !important; background: #fff !important; }
-  .preview-scroll { padding: 0 !important; }
-  .preview-document { width: auto !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: #fff !important; color: #111 !important; font-size: 11pt; }
-  .preview-document a { color: #111 !important; }
-  .preview-document blockquote { background: #f4f4f4 !important; }
-  .preview-document pre, .preview-document :not(pre) > code, .preview-document th { background: #f5f5f5 !important; }
-  .preview-document .page-break { border: 0 !important; margin: 0 !important; page-break-after: always; break-after: page; height: 0 !important; outline: 0 !important; }
-  .preview-document .page-break::after { display: none !important; }
-  .print-header, .print-footer { display: block; position: fixed; left: 0; right: 0; z-index: 1000; color: #666; font: 8.5pt Inter, Arial, sans-serif; }
-  .print-header { top: -13mm; text-align: left; }
-  .print-footer { bottom: -14mm; display: flex; justify-content: space-between; gap: 20px; }
-  .print-page-number::after { content: attr(data-label) " " counter(page); }
-  img, table, pre, blockquote { break-inside: avoid; page-break-inside: avoid; }
-}
-
 /* ===== MarkDownPublish 2.0 workspace upgrades ===== */
 .burger-button {
   width: 34px; height: 34px; flex: 0 0 34px; border: 1px solid var(--line); border-radius: 9px;
@@ -485,7 +466,8 @@ body[data-code-theme="warm"] .preview-document pre { background: #fff3e5; color:
   .preview-document .page-break { border: 0 !important; outline: 0 !important; margin: 0 !important; background: transparent !important; break-after: page; page-break-after: always; column-span: all; }
   .preview-document .page-break::after { display: none !important; }
   .preview-document img,.preview-document table,.preview-document pre,.preview-document blockquote { break-inside: avoid; }
-  .print-header,.print-footer { background: #fff !important; background-image: none !important; box-shadow: none !important; text-shadow: none !important; }
-  .print-header { font-family: var(--mdp-header-font,var(--preview-font)); font-size: var(--mdp-header-size,9pt); color: var(--mdp-header-color,#555); text-align: var(--mdp-header-align,left); top: var(--mdp-header-offset,-10mm); }
-  .print-footer { font-family: var(--mdp-footer-font,var(--preview-font)); font-size: var(--mdp-footer-size,9pt); color: var(--mdp-footer-color,#555); text-align: var(--mdp-footer-align,left); bottom: var(--mdp-footer-offset,-10mm); }
+  /* Never use fixed DOM overlays for running headers/footers. They can cover
+     page content in Chromium print/PDF. Paged-media @page margin boxes are
+     generated dynamically in #printPageStyle instead. */
+  .print-header,.print-footer,.print-page-number { display: none !important; }
 }
