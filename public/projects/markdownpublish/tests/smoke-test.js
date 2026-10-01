@@ -9,6 +9,7 @@ ctx.globalThis = ctx.window;
 vm.createContext(ctx);
 
 vm.runInContext(fs.readFileSync(path.join(root, 'vendor/marked/marked.js'), 'utf8'), ctx);
+vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/references.js'), 'utf8'), ctx);
 vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/markdown.js'), 'utf8'), ctx);
 
 const api = ctx.window.MDPMarkdown;

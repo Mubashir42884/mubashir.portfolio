@@ -1,34 +1,39 @@
 # MarkDownPublish
 
-MarkDownPublish is a local-first academic Markdown writing workspace with live HTML and PDF-style preview, LaTeX rendering, reusable document styles, cached local images, file history, and portable export.
+MarkDownPublish is a local-first academic Markdown writing workspace with live HTML/PDF-style preview, LaTeX, reusable document styles, citations, bookmarks, configurable code/table themes, cached local images, file history, and portable HTML/PDF export.
+
+## Current version
+
+**v2.2.0 — 2026-10-01**
 
 ## Major features
 
 - Split Markdown editor + live rendered preview
 - GitHub-flavored Markdown tables and lists
-- Bold, italic, quotations, inline code, fenced code blocks, H1–H3 toolbar (H4–H5 via Markdown), links, equations, images, rules, page breaks, and custom vertical spacing
+- Bold, italic, quotations, inline code, fenced code blocks, H1–H3 toolbar, links, equations, images, rules, page breaks, and custom vertical spacing
 - Inline and display LaTeX with bundled MathJax
 - Bullet, numbered, alphabetic, and Roman numeral lists
 - Print/PDF header, footer, and page-number metadata
-- HTML view plus configurable A2/A3/A4/Letter PDF-style preview, portrait/landscape layout, margins, and 1–2 columns
+- Configurable A2/A3/A4/Letter PDF layout, portrait/landscape, margins, and 1–2 columns
 - **Save as `.md`**, standalone HTML export, rendered HTML copy, and browser Print / Save as PDF
 - Free-form editor and preview font inputs using fonts installed on the current device
-- Document Style Studio with reusable style presets for H1–H5, paragraph, quotation, and code
-- Per-style font, size, color, alignment, and spacing before/after; quote/code box colors and running header/footer styling
+- Document Style Studio with reusable styles for H1–H5, paragraph, quotation, code, running header/footer, and tables
 - Workspace sidebar with custom styles, file history, and settings
 - Browser-local image cache that keeps large base64 data out of the Markdown source
 - Persistent file handles in supported Chromium browsers
-- Red → orange → yellow MarkDownPublish branding with light/dark icons
 - Light/dark application modes and GitHub/Jupyter/Midnight editor themes
+- **Code themes:** GitHub Light, GitHub Dark, Monokai Pro, Dracula, Gruvbox, and a custom color editor
+- **Citation Manager** with numeric or author-year in-text citations, APA/IEEE/ACM/Harvard bibliography formatting, manual entry, BibTeX import, DOI links, and `[@bibliography]`
+- **Bookmarks** stored with the document and surfaced in exported HTML navigation
+- Standalone HTML export with a wide A3-like reading canvas and a floating clickable table of contents
+- Table appearance presets for compact/normal/wide spacing, 35/60/100% width, border style/thickness, and steelblue/coral/lightgreen row palettes
 - Word/character counts, reading-time estimate, line/column indicator
 - Configurable autosave, tab width, preview mode, and default image width
-- Resizable, side-by-side editor/preview panes at widths ≥600px; compact wrapping toolbar and intentional stacked phone layout
+- Side-by-side editor/preview at widths ≥600px, with an intentional stacked phone layout below 600px
 - Inline font-size menu and custom selected-text font/size/color/alignment formatter
-- Clean white PDF print stylesheet with dark-mode-safe automatic text colors
+- Clean white PDF print stylesheet with fragmentable long code blocks
 
 ## Run locally
-
-### Recommended
 
 Use a local web server so browser storage and File System Access features work correctly:
 
@@ -44,17 +49,76 @@ http://localhost:8080
 
 Windows users can double-click `run-local.bat`. macOS/Linux users can run `./run-local.sh`.
 
-Opening `index.html` directly may still work for basic editing, but `file://` pages can lose advanced file-picker capabilities depending on the browser.
+Opening `index.html` directly may work for basic editing, but `file://` pages can lose advanced file-picker capabilities depending on the browser.
 
-## Browser support
+## Citations
 
-The core editor works in modern browsers. The fullest file workflow is available in current Chromium-based browsers such as Edge and Chrome because MarkDownPublish uses the File System Access API when available.
+Open **Cite** in the Content toolbar.
 
-For privacy, browsers do **not** expose a raw local filesystem path to ordinary web pages. MarkDownPublish therefore stores a granted secure file handle in IndexedDB. If the browser does not support that API, the file can still be opened, but a history item cannot silently reopen the original file later.
+1. Add citations manually or import BibTeX.
+2. Type `[@key]` anywhere in Markdown to cite it.
+3. Put `[@bibliography]` where the reference list should appear.
+4. Keys are case-sensitive.
+
+Example:
+
+```markdown
+Privacy guarantees are often analyzed formally [@smith2000].
+
+[@bibliography]
+```
+
+The Citation Manager supports:
+
+- numeric display such as `[1]` / `[1, 2]`
+- author-year display such as `(Smith, 2000)`
+- APA, IEEE, ACM, and Harvard bibliography formatting
+- per-entry style override
+- title, authors, year, venue/publisher, volume, pages, DOI, and reference type
+- BibTeX import
+
+The citation database is stored inside the document's `MDP-SETTINGS` metadata so citations travel with the `.md` file.
+
+## Bookmarks and exported HTML navigation
+
+Use the bookmark icon in **Content** to add a bookmark at the current Markdown selection/cursor. Bookmarks can be renamed, navigated to, or deleted.
+
+Standalone HTML export automatically creates a floating navigation sidebar containing:
+
+- all H1–H5 headings
+- custom document bookmarks
+
+The HTML reading canvas is intentionally wider than A4/Letter and uses an A3-like maximum width on large screens. The sidebar collapses into a top navigation block on narrower screens. It is hidden when printing.
+
+## Code themes
+
+The top control bar contains **Code theme** beside **Editor theme**. Available presets:
+
+- GitHub Light
+- GitHub Dark
+- Monokai Pro
+- Dracula
+- Gruvbox
+- Custom
+
+The circular custom-theme button opens controls for code background, default text, keyword, string/title, number/symbol, comment/meta, and accent/variable colors. The selected code theme is used in preview, standalone HTML, and print/PDF output.
+
+## Table styling
+
+Open **Custom** in the Heading group to launch Document Style Studio. In addition to H1–H5, paragraph, quote, code, and running header/footer controls, v2.2 includes table styling:
+
+- Compact / Normal / Wide cell and line spacing
+- Table width: 35%, 60%, or 100%
+- Border on/off
+- Straight, dashed, or dotted border
+- 1 px, 2 px, or 3 px border thickness
+- Steel blue, coral, light green, or no accent palette
+
+The requested 35/60/100% values are implemented as **table width**, not border thickness, because percentage-based border thickness is not valid CSS. Border thickness is therefore exposed separately in pixels.
 
 ## Local images
 
-Device-uploaded images are stored in a browser-local IndexedDB cache and inserted into Markdown using a short HTML reference similar to:
+Device-uploaded images are stored in browser-local IndexedDB and inserted into Markdown using a short reference such as:
 
 ```html
 <div class="mdp-image-container" style="text-align:center;">
@@ -62,34 +126,19 @@ Device-uploaded images are stored in a browser-local IndexedDB cache and inserte
 </div>
 ```
 
-This avoids inserting a huge base64 line into the Markdown source.
-
-The cached image is local to the current browser profile. **Export HTML** converts cached assets to embedded data URLs so the resulting standalone HTML remains portable.
+Standalone HTML export converts those cached images to embedded data URLs so the HTML remains portable.
 
 ## Fonts
 
-The editor and preview font controls are editable text inputs. Type the name of any font installed on your device, for example:
+The editor and preview font controls are editable text inputs. Type any locally installed font name, for example Lemon Milk, CMU Serif, Quicksand, Latin Modern Roman, JetBrains Mono, Fira Code, Georgia, or Times New Roman.
 
-- Lemon Milk
-- CMU Serif
-- CMU Sans Serif
-- CMU Typewriter Text
-- Quicksand
-- Latin Modern Roman
-- JetBrains Mono
-- Fira Code
-- Georgia
-- Times New Roman
+MarkDownPublish does not bundle font binaries. If a requested font is missing, a safe fallback is used. Standalone HTML does not embed proprietary local fonts, so documents can reflow on another device.
 
-MarkDownPublish does not bundle font binaries. If the requested font is unavailable, the app uses a safe serif, sans-serif, or monospace fallback. The standalone HTML also does not embed locally installed fonts; exported documents may reflow on other devices.
+## File history and browser support
 
-## Custom styles
+The fullest file workflow is available in current Chromium-based browsers such as Edge and Chrome because MarkDownPublish uses the File System Access API when available.
 
-Open **Custom** in the Heading toolbar to launch Document Style Studio. A style can define H1–H5, paragraph, quotation, code, and running header/footer typography independently. Saved styles appear in the sidebar under **Styles** and can be applied, edited, or deleted.
-
-## File history
-
-Use the burger button at the left of the toolbar and open **Files**. Files opened with a persistent browser file handle can be reopened and exported from their three-dot menu. If a remembered file is no longer accessible, MarkDownPublish reports that it was deleted/moved/renamed from the local path.
+For privacy, browsers do **not** expose raw local filesystem paths. MarkDownPublish stores granted `FileSystemFileHandle` objects in IndexedDB. If a file has been moved/deleted/renamed, access revoked, or the browser does not support persistent handles, reopening it from history may fail.
 
 ## Save / export behavior
 
@@ -97,19 +146,20 @@ On browsers with the File System Access API:
 
 - **Save as .md** opens a native Save As picker.
 - **Export HTML** opens a native Save As picker.
-- `Ctrl/Cmd + S` opens the Markdown Save As workflow.
+- `Ctrl/Cmd + S` starts the Markdown Save As workflow.
 
-On unsupported browsers, these actions fall back to a standard download.
+Other browsers fall back to normal downloads.
 
-PDF output is browser-native: choose **Layout** to set A2/A3/A4/Letter, margins, orientation, and columns; then choose **Print / PDF** → **Save as PDF** in the browser print dialog. Browser settings can override document layout, and PDF preview is not a page-by-page layout engine. Printing forces a clean white paper background even when the editor is dark.
+PDF output is browser-native: choose **Layout**, then **Print / PDF** → **Save as PDF**. Browser print settings can still override paper size, orientation, or margins. Long code blocks are allowed to split across printed pages so they do not create large blank areas.
 
-## Smoke test
+## Tests
 
 If Node.js is installed:
 
 ```bash
 node tests/smoke-test.js
 node tests/layout-export-test.js
+node tests/v22-test.js
 ```
 
 ## Project structure
@@ -119,6 +169,8 @@ MarkDownPublish/
 ├─ index.html
 ├─ README.md
 ├─ UPDATE_NOTES.md
+├─ INSTALL_UPDATE.md
+├─ VERSION
 ├─ LICENSE
 ├─ THIRD_PARTY_NOTICES.md
 ├─ vercel.json
@@ -131,16 +183,15 @@ MarkDownPublish/
 │  ├─ js/
 │  │  ├─ app.js
 │  │  ├─ export.js
-│  │  ├─ markdown.js
 │  │  ├─ layout.js
+│  │  ├─ markdown.js
+│  │  ├─ references.js
 │  │  └─ storage.js
 │  └─ images/
-│     ├─ favicon.svg
-│     ├─ markdownpublish-icon.svg
-│     ├─ markdownpublish-icon-dark.svg
-│     ├─ markdownpublish-logo.svg
-│     └─ markdownpublish-logo-dark.svg
 ├─ tests/
+│  ├─ smoke-test.js
+│  ├─ layout-export-test.js
+│  └─ v22-test.js
 └─ vendor/
    ├─ marked/
    ├─ highlight/
@@ -149,7 +200,7 @@ MarkDownPublish/
 
 ## Deployment
 
-The project remains static and Vercel-friendly. No build step is required. Serve the repository over HTTPS for the best File System Access behavior.
+The project remains static and Vercel-friendly. No build step or new runtime package is required. Serve over HTTPS for the best File System Access behavior.
 
 ## Third-party libraries
 

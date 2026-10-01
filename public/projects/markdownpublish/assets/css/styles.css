@@ -514,3 +514,152 @@ body[data-code-theme="warm"] .preview-document pre { background: #fff3e5; color:
      generated dynamically in #printPageStyle instead. */
   .print-header,.print-footer,.print-page-number { display: none !important; }
 }
+
+/* ================================================================
+   v2.2.0 — code themes, citations/bookmarks, scrollable style studio,
+   table styling, and exported-HTML navigation support
+   ================================================================ */
+
+/* Compact top controls */
+.compact-font-controls .select-wrap { display:grid; gap:3px; color:var(--muted); font-size:9px; font-weight:750; white-space:nowrap; }
+.compact-font-controls .select-wrap select { min-width:108px; min-height:30px; border:1px solid var(--line); border-radius:8px; padding:5px 7px; background:var(--surface); color:var(--ink); font-size:10px; }
+.custom-code-theme-btn { align-self:end; margin-bottom:0; font-size:15px; }
+@media (max-width:1180px) {
+  .input-wrap input { width:132px; }
+  .compact-font-controls .select-wrap select { min-width:104px; }
+}
+
+/* Code theme variables + syntax token overrides. Highlight.js still performs
+   tokenization locally; these theme rules provide the requested palettes. */
+body[data-code-theme="github-light"] { --code-theme-bg:#f6f8fa; --code-theme-fg:#24292f; --code-theme-keyword:#cf222e; --code-theme-string:#0a3069; --code-theme-number:#0550ae; --code-theme-comment:#6e7781; --code-theme-accent:#8250df; }
+body[data-code-theme="github-dark"] { --code-theme-bg:#0d1117; --code-theme-fg:#c9d1d9; --code-theme-keyword:#ff7b72; --code-theme-string:#a5d6ff; --code-theme-number:#79c0ff; --code-theme-comment:#8b949e; --code-theme-accent:#d2a8ff; }
+body[data-code-theme="monokai-pro"] { --code-theme-bg:#2d2a2e; --code-theme-fg:#fcfcfa; --code-theme-keyword:#ff6188; --code-theme-string:#ffd866; --code-theme-number:#ab9df2; --code-theme-comment:#727072; --code-theme-accent:#78dce8; }
+body[data-code-theme="dracula"] { --code-theme-bg:#282a36; --code-theme-fg:#f8f8f2; --code-theme-keyword:#ff79c6; --code-theme-string:#f1fa8c; --code-theme-number:#bd93f9; --code-theme-comment:#6272a4; --code-theme-accent:#8be9fd; }
+body[data-code-theme="gruvbox"] { --code-theme-bg:#282828; --code-theme-fg:#ebdbb2; --code-theme-keyword:#fb4934; --code-theme-string:#b8bb26; --code-theme-number:#d3869b; --code-theme-comment:#928374; --code-theme-accent:#83a598; }
+body[data-code-theme="custom"] { --code-theme-bg:var(--custom-code-bg,#1e1e1e); --code-theme-fg:var(--custom-code-fg,#f4f4f4); --code-theme-keyword:var(--custom-code-keyword,#ff7ab2); --code-theme-string:var(--custom-code-string,#a8cc8c); --code-theme-number:var(--custom-code-number,#d2a8ff); --code-theme-comment:var(--custom-code-comment,#8b949e); --code-theme-accent:var(--custom-code-accent,#79c0ff); }
+.preview-document pre { background:var(--mdp-code-bg,var(--code-theme-bg,var(--surface-2))); color:var(--mdp-code-color,var(--code-theme-fg,var(--ink))); }
+.preview-document pre .hljs { background:transparent; color:var(--code-theme-fg,var(--mdp-code-color,var(--ink))); }
+.preview-document pre .hljs-keyword,
+.preview-document pre .hljs-selector-tag,
+.preview-document pre .hljs-literal,
+.preview-document pre .hljs-section,
+.preview-document pre .hljs-link { color:var(--code-theme-keyword)!important; }
+.preview-document pre .hljs-string,
+.preview-document pre .hljs-title,
+.preview-document pre .hljs-name,
+.preview-document pre .hljs-type,
+.preview-document pre .hljs-attribute { color:var(--code-theme-string)!important; }
+.preview-document pre .hljs-number,
+.preview-document pre .hljs-symbol,
+.preview-document pre .hljs-bullet,
+.preview-document pre .hljs-built_in { color:var(--code-theme-number)!important; }
+.preview-document pre .hljs-comment,
+.preview-document pre .hljs-quote,
+.preview-document pre .hljs-meta { color:var(--code-theme-comment)!important; }
+.preview-document pre .hljs-variable,
+.preview-document pre .hljs-template-variable,
+.preview-document pre .hljs-attr,
+.preview-document pre .hljs-selector-id,
+.preview-document pre .hljs-selector-class { color:var(--code-theme-accent)!important; }
+
+/* Citation and bookmark rendering */
+.preview-document .mdp-citation { text-decoration:none; font-weight:650; cursor:pointer; }
+.preview-document .mdp-citation:hover { text-decoration:underline; text-underline-offset:2px; }
+.preview-document .mdp-citation-missing { color:#b42318!important; border-bottom:1px dotted #b42318; }
+.preview-document .mdp-bibliography { margin-top:2rem; }
+.preview-document .mdp-reference-list { display:grid; gap:.7rem; padding-left:1.5rem; }
+.preview-document .mdp-reference-list.author-year { list-style:none; padding-left:0; }
+.preview-document .mdp-reference-list.author-year li { padding-left:1.5rem; text-indent:-1.5rem; }
+.preview-document .mdp-reference-missing { color:var(--muted); font-style:italic; }
+.preview-document .mdp-bookmark-anchor { display:inline; scroll-margin-top:42px; }
+
+/* Style Studio is a viewport-contained application panel: only its body
+   scrolls, while title and actions remain visible. */
+.style-studio-modal { width:100vw; max-width:none; max-height:none; }
+.style-studio-card {
+  width:min(96vw,1220px)!important;
+  height:min(92dvh,940px);
+  max-height:92dvh!important;
+  display:flex!important;
+  flex-direction:column;
+  gap:0!important;
+  overflow:hidden!important;
+  padding:0!important;
+}
+.style-studio-card > .modal-head { flex:0 0 auto; padding:18px 20px 14px; border-bottom:1px solid var(--line); }
+.style-studio-card > .modal-head p { margin:3px 0 0; }
+.style-studio-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:14px 20px 18px; scrollbar-gutter:stable; }
+.style-studio-scroll .style-name-row { margin-bottom:12px; }
+.style-studio-fields { overflow:visible!important; padding-right:0!important; }
+.style-studio-card > .sticky-actions { flex:0 0 auto; margin:0; padding:12px 20px; border-top:1px solid var(--line); background:var(--surface); box-shadow:0 -8px 22px rgba(0,0,0,.04); }
+.style-target-card { overflow:visible!important; }
+.table-style-card { margin-top:10px; }
+.table-controls-grid { grid-template-columns:repeat(6,minmax(100px,1fr))!important; }
+.style-help { margin:8px 0 0!important; font-size:10px!important; }
+@media (max-width:1000px) { .table-controls-grid { grid-template-columns:repeat(3,minmax(0,1fr))!important; } }
+@media (max-width:620px) { .style-studio-card { width:98vw!important; height:95dvh; max-height:95dvh!important; } .table-controls-grid { grid-template-columns:1fr 1fr!important; } }
+
+/* Table style variables. Density controls both cell spacing and line spacing. */
+.preview-document table {
+  width:var(--mdp-table-width,100%);
+  margin:var(--mdp-table-margin,1.3rem) auto;
+  line-height:var(--mdp-table-line-height,1.5);
+  border-collapse:collapse;
+}
+.preview-document th,
+.preview-document td {
+  padding:var(--mdp-table-pad,.55rem .65rem);
+  border-width:var(--mdp-table-border-width,1px);
+  border-style:var(--mdp-table-border-style,solid);
+  border-color:var(--mdp-table-border-color,var(--line));
+}
+.preview-document th { background:var(--mdp-table-header,var(--surface-2)); }
+.preview-document tbody tr:nth-child(odd) { background:var(--mdp-table-odd,transparent); }
+.preview-document tbody tr:nth-child(even) { background:var(--mdp-table-even,transparent); }
+
+/* Managers */
+.citation-modal { max-width:none; }
+.citation-card { width:min(94vw,920px); height:min(90dvh,900px); max-height:90dvh; display:flex!important; flex-direction:column; gap:0!important; overflow:hidden; padding:0!important; }
+.citation-card > .modal-head { flex:0 0 auto; padding:18px 20px 14px; border-bottom:1px solid var(--line); align-items:flex-start; }
+.citation-card > .modal-head p { margin:4px 0 0; max-width:780px; }
+.citation-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; padding:14px 20px; display:grid; gap:12px; }
+.citation-card > .sticky-actions { padding:12px 20px; margin:0; }
+.manager-section { border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--surface-2); display:grid; gap:10px; }
+.manager-section h3 { margin:0; font-size:12px; }
+.form-grid.three { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.manager-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.manager-list { display:grid; gap:8px; max-height:310px; overflow:auto; }
+.manager-item { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; padding:9px 10px; border:1px solid var(--line); border-radius:9px; background:var(--surface); }
+.manager-item-main { min-width:0; }
+.manager-item-title { font-size:11px; font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.manager-item-meta { margin-top:3px; color:var(--muted); font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.manager-item-actions { display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
+.manager-item-actions button { border:1px solid var(--line); border-radius:7px; padding:5px 7px; background:var(--surface-2); color:var(--ink); font-size:9px; }
+.manager-item-actions .danger-text { color:#b42318; }
+.bookmark-card { width:min(92vw,720px); max-height:86dvh; overflow:auto; }
+.bookmark-add-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:end; }
+.bookmark-add-row .button { margin-bottom:0; }
+@media (max-width:700px) { .form-grid.three { grid-template-columns:1fr; } .bookmark-add-row { grid-template-columns:1fr; } }
+
+/* v2.2 print refinements: preserve selected code theme and table styling while
+   retaining the v2.1.2 fragmentable-code fix. */
+@media print {
+  .preview-document pre {
+    background:var(--mdp-code-bg,var(--code-theme-bg,#f6f8fa))!important;
+    color:var(--mdp-code-color,var(--code-theme-fg,#24292f))!important;
+    border-color:color-mix(in srgb,var(--code-theme-fg,#24292f) 22%,transparent)!important;
+  }
+  .preview-document pre .hljs { color:var(--code-theme-fg,#24292f)!important; background:transparent!important; }
+  .preview-document pre .hljs-keyword,.preview-document pre .hljs-selector-tag,.preview-document pre .hljs-literal,.preview-document pre .hljs-section,.preview-document pre .hljs-link { color:var(--code-theme-keyword,#cf222e)!important; }
+  .preview-document pre .hljs-string,.preview-document pre .hljs-title,.preview-document pre .hljs-name,.preview-document pre .hljs-type,.preview-document pre .hljs-attribute { color:var(--code-theme-string,#0a3069)!important; }
+  .preview-document pre .hljs-number,.preview-document pre .hljs-symbol,.preview-document pre .hljs-bullet,.preview-document pre .hljs-built_in { color:var(--code-theme-number,#0550ae)!important; }
+  .preview-document pre .hljs-comment,.preview-document pre .hljs-quote,.preview-document pre .hljs-meta { color:var(--code-theme-comment,#6e7781)!important; }
+  .preview-document pre .hljs-variable,.preview-document pre .hljs-template-variable,.preview-document pre .hljs-attr,.preview-document pre .hljs-selector-id,.preview-document pre .hljs-selector-class { color:var(--code-theme-accent,#8250df)!important; }
+  .preview-document th,.preview-document td { border-width:var(--mdp-table-border-width,1px)!important; border-style:var(--mdp-table-border-style,solid)!important; border-color:var(--mdp-table-border-color,#d9dde0)!important; padding:var(--mdp-table-pad,.55rem .65rem)!important; }
+  .preview-document th { background:var(--mdp-table-header,#edf2f4)!important; }
+  .preview-document tbody tr:nth-child(odd) { background:var(--mdp-table-odd,transparent)!important; }
+  .preview-document tbody tr:nth-child(even) { background:var(--mdp-table-even,transparent)!important; }
+}
+.preview-document .mdp-reference-list.numeric { list-style:none; counter-reset:mdp-ref; padding-left:0; }
+.preview-document .mdp-reference-list.numeric > li { counter-increment:mdp-ref; padding-left:2rem; position:relative; }
+.preview-document .mdp-reference-list.numeric > li::before { content:"[" counter(mdp-ref) "]"; position:absolute; left:0; color:var(--muted); font-variant-numeric:tabular-nums; }

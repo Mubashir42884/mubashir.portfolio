@@ -57,6 +57,8 @@
     previewMode: 'html',
     tabSize: 2,
     imageWidth: 50,
+    codeTheme: 'github-light',
+    customCodeTheme: { background:'#1e1e1e', text:'#f4f4f4', keyword:'#ff7ab2', string:'#a8cc8c', number:'#d2a8ff', comment:'#8b949e', accent:'#79c0ff' },
     layout: { pageSize: 'A4', orientation: 'portrait', margins: 'normal', custom: [18, 18, 18, 18], columns: 1 }
   };
 
@@ -76,12 +78,13 @@
   ];
 
   const BUILTIN_STYLE = {
-    id: 'builtin-default', name: 'Default Academic', builtin: true, codeTheme: 'auto',
+    id: 'builtin-default', name: 'Default Academic', builtin: true,
     targets: Object.fromEntries(STYLE_TARGETS.map(def => [def.key, {
       font: def.font, size: def.size, color: def.color, colorMode: 'auto',
       align: 'left', before: def.before, after: def.after,
       ...(def.background ? { background: def.background, backgroundMode: 'auto' } : {})
-    }]))
+    }])),
+    table: { density:'normal', width:100, borderEnabled:true, borderStyle:'solid', borderThickness:1, accent:'none' }
   };
 
   const starterMarkdown = `# Research Report Title
@@ -169,6 +172,8 @@ Explain what the results mean, relevant limitations, and implications.
     }
     const result = Object.assign({}, DEFAULT_PREFS, loaded);
     result.layout = window.MDPLayout.normalize(result.layout);
+    if (!['github-light','github-dark','monokai-pro','dracula','gruvbox','custom'].includes(result.codeTheme)) result.codeTheme = 'github-light';
+    result.customCodeTheme = Object.assign({}, DEFAULT_PREFS.customCodeTheme, result.customCodeTheme || {});
     return result;
   }
 
@@ -209,12 +214,41 @@ Explain what the results mean, relevant limitations, and implications.
     return ['left', 'center', 'right', 'justify'].includes(value) ? value : 'left';
   }
 
+  function hexToRgba(hex, alpha) {
+    const value = String(hex || '').replace('#','');
+    if (!/^[0-9a-f]{6}$/i.test(value)) return `rgba(0,0,0,${alpha})`;
+    const n = parseInt(value, 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+  }
+
+  function tablePalette(accent) {
+    const colors = { steelblue:'#4682b4', coral:'#ff7f50', lightgreen:'#90ee90' };
+    const base = colors[accent] || null;
+    if (!base) return { header:'var(--surface-2)', odd:'transparent', even:'transparent', border:'var(--line)' };
+    return {
+      header: hexToRgba(base, .78),
+      odd: hexToRgba(base, .40),
+      even: hexToRgba(base, .60),
+      border: base
+    };
+  }
+
+  function codeThemePreset(theme) {
+    const presets = {
+      'github-light': { background:'#f6f8fa', text:'#24292f', keyword:'#cf222e', string:'#0a3069', number:'#0550ae', comment:'#6e7781', accent:'#8250df' },
+      'github-dark': { background:'#0d1117', text:'#c9d1d9', keyword:'#ff7b72', string:'#a5d6ff', number:'#79c0ff', comment:'#8b949e', accent:'#d2a8ff' },
+      'monokai-pro': { background:'#2d2a2e', text:'#fcfcfa', keyword:'#ff6188', string:'#ffd866', number:'#ab9df2', comment:'#727072', accent:'#78dce8' },
+      'dracula': { background:'#282a36', text:'#f8f8f2', keyword:'#ff79c6', string:'#f1fa8c', number:'#bd93f9', comment:'#6272a4', accent:'#8be9fd' },
+      'gruvbox': { background:'#282828', text:'#ebdbb2', keyword:'#fb4934', string:'#b8bb26', number:'#d3869b', comment:'#928374', accent:'#83a598' }
+    };
+    return presets[theme] || presets['github-light'];
+  }
+
   function normalizeStyle(style) {
     const normalized = cloneStyle(BUILTIN_STYLE);
     normalized.id = style && style.id ? style.id : `style-${Date.now()}`;
     normalized.name = String(style && style.name ? style.name : 'Custom Style').trim().slice(0,80) || 'Custom Style';
     normalized.builtin = Boolean(style && style.builtin);
-    normalized.codeTheme = ['auto', 'light', 'dark', 'warm'].includes(style && style.codeTheme) ? style.codeTheme : 'auto';
     STYLE_TARGETS.forEach(def => {
       const source = style && style.targets && style.targets[def.key] ? style.targets[def.key] : {};
       normalized.targets[def.key] = {
@@ -228,6 +262,15 @@ Explain what the results mean, relevant limitations, and implications.
         ...(def.background ? { background: sanitizeColor(source.background, def.background), backgroundMode: ['auto','custom'].includes(source.backgroundMode) ? source.backgroundMode : (style && style.builtin ? 'auto' : source.background ? 'custom' : 'auto') } : {})
       };
     });
+    const table = style && style.table && typeof style.table === 'object' ? style.table : {};
+    normalized.table = {
+      density: ['compact','normal','wide'].includes(table.density) ? table.density : 'normal',
+      width: [35,60,100].includes(Number(table.width)) ? Number(table.width) : 100,
+      borderEnabled: table.borderEnabled !== false,
+      borderStyle: ['solid','dashed','dotted'].includes(table.borderStyle) ? table.borderStyle : 'solid',
+      borderThickness: [1,2,3].includes(Number(table.borderThickness)) ? Number(table.borderThickness) : 1,
+      accent: ['none','steelblue','coral','lightgreen'].includes(table.accent) ? table.accent : 'none'
+    };
     return normalized;
   }
 
@@ -258,21 +301,35 @@ Explain what the results mean, relevant limitations, and implications.
       const t = clean.targets[def.key];
       scope.style.setProperty(`--mdp-${def.key}-font`, t.font ? sanitizeFontName(t.font, def.key === 'code' ? 'mono' : 'serif') : (def.key === 'code' ? 'var(--editor-font)' : 'var(--preview-font)'));
       scope.style.setProperty(`--mdp-${def.key}-size`, t.size);
-      scope.style.setProperty(`--mdp-${def.key}-color`, t.colorMode === 'auto' ? (['quote','header','footer'].includes(def.key) ? 'var(--muted)' : 'var(--ink)') : t.color);
+      const autoColor = def.key === 'code' ? 'var(--code-theme-fg,var(--ink))' : (['quote','header','footer'].includes(def.key) ? 'var(--muted)' : 'var(--ink)');
+      scope.style.setProperty(`--mdp-${def.key}-color`, t.colorMode === 'auto' ? autoColor : t.color);
       scope.style.setProperty(`--mdp-${def.key}-align`, t.align);
       scope.style.setProperty(`--mdp-${def.key}-before`, t.before);
       scope.style.setProperty(`--mdp-${def.key}-after`, t.after);
-      if (def.background) scope.style.setProperty(`--mdp-${def.key}-bg`, t.backgroundMode === 'auto' ? (def.key === 'quote' ? 'var(--accent-soft)' : 'var(--surface-2)') : t.background);
+      if (def.background) {
+        const autoBackground = def.key === 'quote' ? 'var(--accent-soft)' : 'var(--code-theme-bg,var(--surface-2))';
+        scope.style.setProperty(`--mdp-${def.key}-bg`, t.backgroundMode === 'auto' ? autoBackground : t.background);
+      }
     });
+    const density = { compact:{ pad:'.32rem .44rem', line:'1.3', margin:'.85rem' }, normal:{ pad:'.55rem .65rem', line:'1.5', margin:'1.3rem' }, wide:{ pad:'.82rem .9rem', line:'1.75', margin:'1.7rem' } }[clean.table.density];
+    const palette = tablePalette(clean.table.accent);
+    scope.style.setProperty('--mdp-table-pad', density.pad);
+    scope.style.setProperty('--mdp-table-line-height', density.line);
+    scope.style.setProperty('--mdp-table-margin', density.margin);
+    scope.style.setProperty('--mdp-table-width', `${clean.table.width}%`);
+    scope.style.setProperty('--mdp-table-border-style', clean.table.borderEnabled ? clean.table.borderStyle : 'none');
+    scope.style.setProperty('--mdp-table-border-width', clean.table.borderEnabled ? `${clean.table.borderThickness}px` : '0px');
+    scope.style.setProperty('--mdp-table-border-color', palette.border);
+    scope.style.setProperty('--mdp-table-header', palette.header);
+    scope.style.setProperty('--mdp-table-odd', palette.odd);
+    scope.style.setProperty('--mdp-table-even', palette.even);
     activeStyle = clean;
-    scope.dataset.codeTheme = clean.codeTheme;
     if (!options || options.persist !== false) {
       activeStyleId = clean.id;
       localStorage.setItem(ACTIVE_STYLE_KEY, clean.id);
     }
     activeStyleStatus.textContent = options && options.unsaved ? `${clean.name} (unsaved)` : clean.name;
     renderStylesList();
-    updateHighlightTheme();
     // Header/footer typography is part of the paged-media rule, so refresh it
     // whenever a style preset changes.
     if (editor && window.MDPLayout) {
@@ -284,14 +341,21 @@ Explain what the results mean, relevant limitations, and implications.
   function buildStyleCss(style) {
     const clean = normalizeStyle(style || BUILTIN_STYLE);
     const selectors = {h1:'h1',h2:'h2',h3:'h3',h4:'h4',h5:'h5',p:'p',quote:'blockquote',code:'pre, .document :not(pre) > code',header:'.print-header',footer:'.print-footer'};
-    return STYLE_TARGETS.map(def => {
+    const targetCss = STYLE_TARGETS.map(def => {
       const t = clean.targets[def.key];
       const font = t.font ? sanitizeFontName(t.font, def.key === 'code' ? 'mono' : 'serif') : (def.key === 'code' ? sanitizeFontName(prefs.editorFontName, 'mono') : sanitizeFontName(prefs.previewFontName, 'serif'));
-      const color = t.colorMode === 'auto' ? (['quote','header','footer'].includes(def.key) ? '#52606b' : '#252a2e') : t.color;
-      const extra = def.background ? `background-color:${t.backgroundMode === 'auto' ? (def.key === 'quote' ? '#f2f5f1' : '#f3f4f5') : t.background};` : '';
+      const color = t.colorMode === 'auto' ? (def.key === 'code' ? 'var(--code-theme-fg,#252a2e)' : (['quote','header','footer'].includes(def.key) ? '#52606b' : '#252a2e')) : t.color;
+      const autoBg = def.key === 'quote' ? '#f2f5f1' : 'var(--code-theme-bg,#f3f4f5)';
+      const extra = def.background ? `background-color:${t.backgroundMode === 'auto' ? autoBg : t.background};` : '';
       const selector = def.key === 'header' || def.key === 'footer' ? selectors[def.key] : `.document ${selectors[def.key]}`;
       return `${selector}{font-family:${font};font-size:${t.size};color:${color};text-align:${t.align};margin-block-start:${t.before};margin-block-end:${t.after};${extra}}`;
-    }).join('\n') + '\n.document blockquote p{font:inherit;color:inherit;text-align:inherit;margin:0;}\n.document pre code{font:inherit;color:inherit;}';
+    }).join('\n');
+    const density = { compact:{ pad:'.32rem .44rem', line:'1.3', margin:'.85rem' }, normal:{ pad:'.55rem .65rem', line:'1.5', margin:'1.3rem' }, wide:{ pad:'.82rem .9rem', line:'1.75', margin:'1.7rem' } }[clean.table.density];
+    const palette = tablePalette(clean.table.accent);
+    const borderStyle = clean.table.borderEnabled ? clean.table.borderStyle : 'none';
+    const borderWidth = clean.table.borderEnabled ? `${clean.table.borderThickness}px` : '0';
+    const tableCss = `.document table{width:${clean.table.width}%;margin:${density.margin} auto;line-height:${density.line};}.document th,.document td{padding:${density.pad};border:${borderWidth} ${borderStyle} ${palette.border};}.document th{background:${palette.header};}.document tbody tr:nth-child(odd){background:${palette.odd};}.document tbody tr:nth-child(even){background:${palette.even};}`;
+    return `${targetCss}\n${tableCss}\n.document blockquote p{font:inherit;color:inherit;text-align:inherit;margin:0;}\n.document pre code{font:inherit;color:inherit;}`;
   }
 
   function applyFontPreferences() {
@@ -305,6 +369,7 @@ Explain what the results mean, relevant limitations, and implications.
     document.body.dataset.theme = prefs.theme;
     document.body.dataset.editorTheme = prefs.editorTheme;
     document.getElementById('editorThemeSelect').value = prefs.editorTheme;
+    document.getElementById('codeThemeSelect').value = prefs.codeTheme;
     document.getElementById('workspace').style.setProperty('--editor-width', prefs.editorWidth);
     applyFontPreferences();
 
@@ -540,6 +605,8 @@ Explain what the results mean, relevant limitations, and implications.
       case 'spacing': document.getElementById('spacingDialog').showModal(); break;
       case 'styleStudio': openStyleStudio(activeStyleId === BUILTIN_STYLE.id ? null : activeStyleId); break;
       case 'customtext': openInlineStyleDialog(); break;
+      case 'citation': openCitationManager(); break;
+      case 'bookmark': openBookmarkManager(); break;
     }
   }
 
@@ -617,7 +684,7 @@ Explain what the results mean, relevant limitations, and implications.
     holder.style.position = 'fixed';
     holder.style.left = '-100000px';
     holder.style.top = '0';
-    holder.style.width = '900px';
+    holder.style.width = '1120px';
     holder.style.pointerEvents = 'none';
     holder.innerHTML = window.MDPMarkdown.renderMarkdown(markdown);
     document.body.appendChild(holder);
@@ -644,7 +711,9 @@ Explain what the results mean, relevant limitations, and implications.
       pageLayout: window.MDPLayout.normalize(window.MDPMarkdown.parseDocumentSettings(markdown).layout || prefs.layout),
       headerStyle: pageChromeStyle('header'),
       footerStyle: pageChromeStyle('footer'),
-      codeTheme: activeStyle.codeTheme
+      codeTheme: prefs.codeTheme,
+      customCodeTheme: prefs.customCodeTheme,
+      bookmarks: settings.bookmarks
     });
   }
 
@@ -702,11 +771,29 @@ Explain what the results mean, relevant limitations, and implications.
     if (themeColorMeta) themeColorMeta.content = isDark ? '#1C1714' : '#F97316';
   }
 
+  function applyCustomCodeThemeVars() {
+    const custom = Object.assign({}, DEFAULT_PREFS.customCodeTheme, prefs.customCodeTheme || {});
+    const map = {
+      background:'--custom-code-bg', text:'--custom-code-fg', keyword:'--custom-code-keyword',
+      string:'--custom-code-string', number:'--custom-code-number', comment:'--custom-code-comment', accent:'--custom-code-accent'
+    };
+    Object.entries(map).forEach(([key, variable]) => document.body.style.setProperty(variable, sanitizeColor(custom[key], DEFAULT_PREFS.customCodeTheme[key])));
+  }
+
   function updateHighlightTheme() {
-    const configured = activeStyle && activeStyle.codeTheme || 'auto';
-    const isDark = configured === 'dark' || (configured === 'auto' && document.body.dataset.theme === 'dark');
+    const configured = ['github-light','github-dark','monokai-pro','dracula','gruvbox','custom'].includes(prefs.codeTheme) ? prefs.codeTheme : 'github-light';
+    const customBg = sanitizeColor((prefs.customCodeTheme || {}).background, DEFAULT_PREFS.customCodeTheme.background).slice(1);
+    const rgb = parseInt(customBg, 16);
+    const customLuma = (((rgb >> 16) & 255) * 0.2126 + ((rgb >> 8) & 255) * 0.7152 + (rgb & 255) * 0.0722) / 255;
+    const isDark = ['github-dark','monokai-pro','dracula','gruvbox'].includes(configured) || (configured === 'custom' && customLuma < 0.58);
     themeLink.href = isDark ? 'vendor/highlight/atom-one-dark.min.css' : 'vendor/highlight/atom-one-light.min.css';
     document.body.dataset.codeTheme = configured;
+    document.getElementById('codeThemeSelect').value = configured;
+    const settingsCodeTheme = document.getElementById('settingsCodeTheme');
+    if (settingsCodeTheme) settingsCodeTheme.value = configured;
+    applyCustomCodeThemeVars();
+    // Re-apply styles so auto code foreground/background follow the selected theme.
+    if (activeStyle && activeStyle.targets) applyStylePreset(activeStyle, { persist:false });
   }
 
   function setPreviewMode(mode, persist) {
@@ -800,12 +887,11 @@ Explain what the results mean, relevant limitations, and implications.
   }
 
   function saveHeaderFooterSettings() {
-    const settings = {
-      header: document.getElementById('headerTextInput').value.trim(),
-      footer: document.getElementById('footerTextInput').value.trim(),
-      pageNumbers: document.getElementById('pageNumbersInput').checked,
-      layout: window.MDPMarkdown.parseDocumentSettings(editor.value).layout || prefs.layout
-    };
+    const settings = window.MDPMarkdown.parseDocumentSettings(editor.value);
+    settings.header = document.getElementById('headerTextInput').value.trim();
+    settings.footer = document.getElementById('footerTextInput').value.trim();
+    settings.pageNumbers = document.getElementById('pageNumbersInput').checked;
+    settings.layout = settings.layout || prefs.layout;
     const oldStart = editor.selectionStart;
     editor.value = window.MDPMarkdown.applyDocumentSettings(editor.value, settings);
     editor.setSelectionRange(Math.min(oldStart, editor.value.length), Math.min(oldStart, editor.value.length));
@@ -871,7 +957,6 @@ Explain what the results mean, relevant limitations, and implications.
           <label>Space before<input type="text" data-field="before" placeholder="${def.before}" title="Space before this element, e.g. 12px"></label>
           <label>Space after<input type="text" data-field="after" placeholder="${def.after}" title="Space after this element, e.g. 12px"></label>
           ${def.background ? '<label>Box color<input type="color" data-field="background"></label><label class="check-row">Auto box color<input type="checkbox" data-field="autoBackground"></label>' : ''}
-          ${def.key === 'code' ? '<label>Code theme<select id="studioCodeTheme"><option value="auto">Follow page theme</option><option value="light">Light</option><option value="dark">Dark</option><option value="warm">Warm paper</option></select></label>' : ''}
         </div>
       </section>`).join('');
   }
@@ -892,7 +977,14 @@ Explain what the results mean, relevant limitations, and implications.
         card.querySelector('[data-field="background"]').disabled = t.backgroundMode === 'auto';
       }
     });
-    document.getElementById('studioCodeTheme').value = clean.codeTheme;
+    document.getElementById('tableDensity').value = clean.table.density;
+    document.getElementById('tableWidth').value = String(clean.table.width);
+    document.getElementById('tableBorderEnabled').checked = clean.table.borderEnabled;
+    document.getElementById('tableBorderStyle').value = clean.table.borderStyle;
+    document.getElementById('tableBorderThickness').value = String(clean.table.borderThickness);
+    document.getElementById('tableAccent').value = clean.table.accent;
+    const scroll = document.getElementById('styleStudioScroll');
+    if (scroll) scroll.scrollTop = 0;
   }
 
   function collectStyleStudio() {
@@ -901,8 +993,15 @@ Explain what the results mean, relevant limitations, and implications.
       id: editingId || `style-${Date.now()}-${Math.random().toString(16).slice(2,8)}`,
       name: document.getElementById('styleNameInput').value.trim() || 'Custom Style',
       builtin: false,
-      codeTheme: document.getElementById('studioCodeTheme').value,
-      targets: {}
+      targets: {},
+      table: {
+        density: document.getElementById('tableDensity').value,
+        width: Number(document.getElementById('tableWidth').value),
+        borderEnabled: document.getElementById('tableBorderEnabled').checked,
+        borderStyle: document.getElementById('tableBorderStyle').value,
+        borderThickness: Number(document.getElementById('tableBorderThickness').value),
+        accent: document.getElementById('tableAccent').value
+      }
     };
     STYLE_TARGETS.forEach(def => {
       const card = document.querySelector(`[data-style-target="${def.key}"]`);
@@ -1076,6 +1175,7 @@ Explain what the results mean, relevant limitations, and implications.
   function syncSettingsUi() {
     document.getElementById('settingsTheme').value = prefs.theme;
     document.getElementById('settingsEditorTheme').value = prefs.editorTheme;
+    document.getElementById('settingsCodeTheme').value = prefs.codeTheme;
     document.getElementById('settingsPreviewMode').value = prefs.previewMode;
     document.getElementById('settingsTabSize').value = prefs.tabSize;
     document.getElementById('settingsImageWidth').value = prefs.imageWidth;
@@ -1090,6 +1190,302 @@ Explain what the results mean, relevant limitations, and implications.
     [STORAGE_KEY, LEGACY_STORAGE_KEY, PREFS_KEY, LEGACY_PREFS_KEY, STYLES_KEY, ACTIVE_STYLE_KEY].forEach(key => localStorage.removeItem(key));
     await window.MDPStorage.clearAppDatabase();
     window.location.reload();
+  }
+
+  function updateDocumentSettings(mutator) {
+    const settings = window.MDPMarkdown.parseDocumentSettings(editor.value);
+    const next = typeof mutator === 'function' ? mutator(settings) || settings : Object.assign(settings, mutator || {});
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const oldPrefix = editor.value.length - window.MDPMarkdown.stripDocumentSettings(editor.value).length;
+    editor.value = window.MDPMarkdown.applyDocumentSettings(editor.value, next);
+    const newPrefix = editor.value.length - window.MDPMarkdown.stripDocumentSettings(editor.value).length;
+    const delta = newPrefix - oldPrefix;
+    editor.setSelectionRange(Math.max(0, Math.min(editor.value.length, start + delta)), Math.max(0, Math.min(editor.value.length, end + delta)));
+    if (storedSelection) storedSelection = [storedSelection[0] + delta, storedSelection[1] + delta];
+    handleEditorChange();
+    return next;
+  }
+
+  // ---------- Code themes ----------
+  function openCustomCodeThemeDialog() {
+    const custom = Object.assign({}, DEFAULT_PREFS.customCodeTheme, prefs.customCodeTheme || {});
+    const ids = { background:'codeThemeBackground', text:'codeThemeText', keyword:'codeThemeKeyword', string:'codeThemeString', number:'codeThemeNumber', comment:'codeThemeComment', accent:'codeThemeAccent' };
+    Object.entries(ids).forEach(([key,id]) => { document.getElementById(id).value = sanitizeColor(custom[key], DEFAULT_PREFS.customCodeTheme[key]); });
+    document.getElementById('codeThemeDialog').showModal();
+  }
+
+  function saveCustomCodeTheme() {
+    const custom = {
+      background: document.getElementById('codeThemeBackground').value,
+      text: document.getElementById('codeThemeText').value,
+      keyword: document.getElementById('codeThemeKeyword').value,
+      string: document.getElementById('codeThemeString').value,
+      number: document.getElementById('codeThemeNumber').value,
+      comment: document.getElementById('codeThemeComment').value,
+      accent: document.getElementById('codeThemeAccent').value
+    };
+    persistPrefs({ codeTheme:'custom', customCodeTheme:custom });
+    updateHighlightTheme();
+    document.getElementById('codeThemeDialog').close();
+    scheduleRender();
+    showToast('Custom code theme applied.');
+  }
+
+  function setCodeTheme(theme) {
+    const value = ['github-light','github-dark','monokai-pro','dracula','gruvbox','custom'].includes(theme) ? theme : 'github-light';
+    persistPrefs({ codeTheme:value });
+    updateHighlightTheme();
+    scheduleRender();
+    if (value === 'custom') openCustomCodeThemeDialog();
+  }
+
+  // ---------- Bookmarks ----------
+  function bookmarkId() {
+    return `bm-${Date.now()}-${Math.random().toString(16).slice(2,8)}`;
+  }
+
+  function selectionLabel() {
+    const [start,end] = storedSelection || [editor.selectionStart, editor.selectionEnd];
+    const selected = editor.value.slice(start,end).replace(/<[^>]+>/g,' ').replace(/[#*_>`~\[\]]/g,' ').replace(/\s+/g,' ').trim();
+    if (selected) return selected.slice(0,90);
+    const lineStart = editor.value.lastIndexOf('\n', start - 1) + 1;
+    const lineEndRaw = editor.value.indexOf('\n', start);
+    const lineEnd = lineEndRaw < 0 ? editor.value.length : lineEndRaw;
+    return editor.value.slice(lineStart,lineEnd).replace(/^\s*#{1,6}\s*/, '').replace(/<[^>]+>/g,' ').trim().slice(0,90) || 'Bookmark';
+  }
+
+  function renderBookmarkList() {
+    const settings = window.MDPMarkdown.parseDocumentSettings(editor.value);
+    const list = document.getElementById('bookmarkList');
+    if (!settings.bookmarks.length) {
+      list.innerHTML = '<div class="browser-note">No bookmarks yet. Select text or place the cursor at a section, then add a bookmark.</div>';
+      return;
+    }
+    list.innerHTML = settings.bookmarks.map(item => `
+      <div class="manager-item" data-bookmark-id="${item.id}">
+        <div class="manager-item-main"><input class="bookmark-label-input" data-bookmark-label="${item.id}" type="text" value="${window.MDPMarkdown.escapeHtml(item.label)}" /></div>
+        <div class="manager-item-actions">
+          <button type="button" data-bookmark-action="save" data-id="${item.id}">Save</button>
+          <button type="button" data-bookmark-action="go" data-id="${item.id}">Go</button>
+          <button type="button" class="danger-text" data-bookmark-action="delete" data-id="${item.id}">Delete</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function openBookmarkManager() {
+    rememberSelection();
+    document.getElementById('bookmarkNameInput').value = selectionLabel();
+    renderBookmarkList();
+    document.getElementById('bookmarkDialog').showModal();
+  }
+
+  function addBookmarkAtSelection() {
+    const label = document.getElementById('bookmarkNameInput').value.trim() || selectionLabel();
+    const [start,end] = storedSelection || [editor.selectionStart, editor.selectionEnd];
+    const id = bookmarkId();
+    const anchor = `<span id="mdp-bookmark-${id}" data-mdp-bookmark="${id}" class="mdp-bookmark-anchor"></span>`;
+    editor.setRangeText(anchor, start, start, 'end');
+    storedSelection = [start + anchor.length, end + anchor.length];
+    updateDocumentSettings(settings => {
+      settings.bookmarks = (settings.bookmarks || []).concat([{ id, label:label.slice(0,160) }]);
+      return settings;
+    });
+    renderBookmarkList();
+    document.getElementById('bookmarkNameInput').value = '';
+    showToast(`Bookmark “${label}” added.`);
+  }
+
+  function renameBookmark(id) {
+    const input = document.querySelector(`[data-bookmark-label="${id}"]`);
+    const label = input ? input.value.trim().slice(0,160) : '';
+    if (!label) { showToast('Bookmark name cannot be empty.'); return; }
+    updateDocumentSettings(settings => {
+      settings.bookmarks = (settings.bookmarks || []).map(item => item.id === id ? { ...item, label } : item);
+      return settings;
+    });
+    renderBookmarkList();
+    showToast('Bookmark renamed.');
+  }
+
+  function deleteBookmark(id) {
+    if (!window.confirm('Delete this bookmark?')) return;
+    const body = window.MDPMarkdown.stripDocumentSettings(editor.value);
+    const anchorRe = new RegExp(`<span\\s+id=["']mdp-bookmark-${id}["'][^>]*><\\/span>`, 'gi');
+    const cleanedBody = body.replace(anchorRe, '');
+    const settings = window.MDPMarkdown.parseDocumentSettings(editor.value);
+    settings.bookmarks = (settings.bookmarks || []).filter(item => item.id !== id);
+    editor.value = window.MDPMarkdown.applyDocumentSettings(cleanedBody, settings);
+    handleEditorChange();
+    renderBookmarkList();
+    showToast('Bookmark deleted.');
+  }
+
+  async function goToBookmark(id) {
+    document.getElementById('bookmarkDialog').close();
+    await render();
+    const target = preview.querySelector(`#mdp-bookmark-${CSS.escape(id)}`);
+    if (target) target.scrollIntoView({ behavior:'smooth', block:'center' });
+    else showToast('Bookmark anchor was not found in the current document.');
+  }
+
+  // ---------- Citation manager ----------
+  function clearCitationForm() {
+    document.getElementById('citationEditingKey').value = '';
+    document.getElementById('citationKey').value = '';
+    document.getElementById('citationType').value = 'journal';
+    document.getElementById('citationEntryStyle').value = 'inherit';
+    document.getElementById('citationTitle').value = '';
+    document.getElementById('citationAuthors').value = '';
+    document.getElementById('citationYear').value = '';
+    document.getElementById('citationVolume').value = '';
+    document.getElementById('citationPages').value = '';
+    document.getElementById('citationVenue').value = '';
+    document.getElementById('citationDoi').value = '';
+    document.getElementById('saveCitationBtn').textContent = 'Add citation';
+  }
+
+  function renderCitationList() {
+    const settings = window.MDPMarkdown.parseDocumentSettings(editor.value);
+    const list = document.getElementById('citationList');
+    if (!settings.citations.length) {
+      list.innerHTML = '<div class="browser-note">No citations saved in this document yet.</div>';
+      return;
+    }
+    list.innerHTML = settings.citations.map(c => `
+      <div class="manager-item" data-citation-key="${window.MDPMarkdown.escapeHtml(c.key)}">
+        <div class="manager-item-main"><div class="manager-item-title">@${window.MDPMarkdown.escapeHtml(c.key)} — ${window.MDPMarkdown.escapeHtml(c.title || 'Untitled')}</div><div class="manager-item-meta">${window.MDPMarkdown.escapeHtml(c.authors || 'Unknown author')} · ${window.MDPMarkdown.escapeHtml(c.year || 'n.d.')} · ${window.MDPMarkdown.escapeHtml(c.type)}</div></div>
+        <div class="manager-item-actions"><button type="button" data-citation-action="insert" data-key="${c.key}">Insert</button><button type="button" data-citation-action="edit" data-key="${c.key}">Edit</button><button type="button" class="danger-text" data-citation-action="delete" data-key="${c.key}">Delete</button></div>
+      </div>`).join('');
+  }
+
+  function openCitationManager() {
+    rememberSelection();
+    const settings = window.MDPMarkdown.parseDocumentSettings(editor.value);
+    document.getElementById('citationMode').value = settings.citationMode;
+    document.getElementById('citationGlobalStyle').value = settings.citationStyle;
+    document.getElementById('citationColor').value = settings.citationColor;
+    clearCitationForm();
+    renderCitationList();
+    document.getElementById('citationDialog').showModal();
+  }
+
+  function applyCitationSettings(showMessage) {
+    updateDocumentSettings(settings => {
+      settings.citationMode = document.getElementById('citationMode').value;
+      settings.citationStyle = document.getElementById('citationGlobalStyle').value;
+      settings.citationColor = document.getElementById('citationColor').value;
+      return settings;
+    });
+    if (showMessage !== false) showToast('Citation settings applied.');
+  }
+
+  function collectCitationForm() {
+    return window.MDPReferences.normalizeCitation({
+      key: document.getElementById('citationKey').value.trim().replace(/^@/, ''),
+      type: document.getElementById('citationType').value,
+      style: document.getElementById('citationEntryStyle').value,
+      title: document.getElementById('citationTitle').value,
+      authors: document.getElementById('citationAuthors').value,
+      year: document.getElementById('citationYear').value,
+      volume: document.getElementById('citationVolume').value,
+      pages: document.getElementById('citationPages').value,
+      venue: document.getElementById('citationVenue').value,
+      doi: document.getElementById('citationDoi').value
+    });
+  }
+
+  function saveCitationEntry() {
+    const entry = collectCitationForm();
+    if (!window.MDPReferences.KEY_RE.test(entry.key)) { showToast('Citation key may contain letters, numbers, colon, underscore, and hyphen only.'); return; }
+    if (!entry.title) { showToast('Add a title for the citation.'); return; }
+    const editingKey = document.getElementById('citationEditingKey').value;
+    const settings = window.MDPMarkdown.parseDocumentSettings(editor.value);
+    if (settings.citations.some(c => c.key === entry.key && c.key !== editingKey)) { showToast(`Citation key @${entry.key} already exists.`); return; }
+    let body = window.MDPMarkdown.stripDocumentSettings(editor.value);
+    if (editingKey && editingKey !== entry.key) {
+      const escaped = editingKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      body = body.replace(new RegExp(`@${escaped}(?=[,;\\]\\s])`, 'g'), `@${entry.key}`);
+    }
+    const citations = settings.citations.filter(c => c.key !== editingKey && c.key !== entry.key).concat([entry]);
+    settings.citations = citations;
+    settings.citationMode = document.getElementById('citationMode').value;
+    settings.citationStyle = document.getElementById('citationGlobalStyle').value;
+    settings.citationColor = document.getElementById('citationColor').value;
+    const oldPrefix = editor.value.length - window.MDPMarkdown.stripDocumentSettings(editor.value).length;
+    editor.value = window.MDPMarkdown.applyDocumentSettings(body, settings);
+    const newPrefix = editor.value.length - window.MDPMarkdown.stripDocumentSettings(editor.value).length;
+    if (storedSelection) { const delta = newPrefix - oldPrefix; storedSelection = [storedSelection[0] + delta, storedSelection[1] + delta]; }
+    handleEditorChange();
+    clearCitationForm();
+    renderCitationList();
+    showToast(`Citation @${entry.key} saved.`);
+  }
+
+  function editCitation(key) {
+    const citation = window.MDPMarkdown.parseDocumentSettings(editor.value).citations.find(c => c.key === key);
+    if (!citation) return;
+    document.getElementById('citationEditingKey').value = citation.key;
+    document.getElementById('citationKey').value = citation.key;
+    document.getElementById('citationType').value = citation.type;
+    document.getElementById('citationEntryStyle').value = citation.style || 'inherit';
+    document.getElementById('citationTitle').value = citation.title;
+    document.getElementById('citationAuthors').value = citation.authors;
+    document.getElementById('citationYear').value = citation.year;
+    document.getElementById('citationVolume').value = citation.volume;
+    document.getElementById('citationPages').value = citation.pages;
+    document.getElementById('citationVenue').value = citation.venue || '';
+    document.getElementById('citationDoi').value = citation.doi;
+    document.getElementById('saveCitationBtn').textContent = 'Update citation';
+    document.getElementById('citationKey').scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+
+  function deleteCitation(key) {
+    if (!window.confirm(`Delete citation @${key}? Existing [@${key}] markers will remain and be shown as missing until replaced.`)) return;
+    updateDocumentSettings(settings => { settings.citations = settings.citations.filter(c => c.key !== key); return settings; });
+    renderCitationList();
+    clearCitationForm();
+    showToast(`Citation @${key} deleted.`);
+  }
+
+  function insertAtStoredSelection(text) {
+    const [start,end] = storedSelection || [editor.selectionStart, editor.selectionEnd];
+    editor.setRangeText(text, start, end, 'end');
+    storedSelection = null;
+    editor.focus();
+    handleEditorChange();
+  }
+
+  function insertCitationMarker(key) {
+    document.getElementById('citationDialog').close();
+    insertAtStoredSelection(`[@${key}]`);
+  }
+
+  function insertBibliographyMarker() {
+    document.getElementById('citationDialog').close();
+    insertAtStoredSelection('\n\n[@bibliography]\n\n');
+    showToast('Bibliography marker inserted.');
+  }
+
+  function importBibtex() {
+    const parsed = window.MDPReferences.parseBibtex(document.getElementById('bibtexInput').value);
+    if (!parsed.length) { showToast('No valid BibTeX entries were found.'); return; }
+    const settings = window.MDPMarkdown.parseDocumentSettings(editor.value);
+    const existing = new Set(settings.citations.map(c => c.key));
+    const additions = parsed.filter(c => !existing.has(c.key));
+    if (!additions.length) { showToast('All imported BibTeX keys already exist in this document.'); return; }
+    settings.citations = settings.citations.concat(additions);
+    settings.citationMode = document.getElementById('citationMode').value;
+    settings.citationStyle = document.getElementById('citationGlobalStyle').value;
+    settings.citationColor = document.getElementById('citationColor').value;
+    const oldPrefix = editor.value.length - window.MDPMarkdown.stripDocumentSettings(editor.value).length;
+    editor.value = window.MDPMarkdown.applyDocumentSettings(editor.value, settings);
+    const newPrefix = editor.value.length - window.MDPMarkdown.stripDocumentSettings(editor.value).length;
+    if (storedSelection) { const delta = newPrefix - oldPrefix; storedSelection = [storedSelection[0] + delta, storedSelection[1] + delta]; }
+    handleEditorChange();
+    renderCitationList();
+    document.getElementById('bibtexInput').value = '';
+    showToast(`${additions.length} BibTeX citation${additions.length === 1 ? '' : 's'} imported.`);
   }
 
   // Toolbar actions
@@ -1274,7 +1670,35 @@ Explain what the results mean, relevant limitations, and implications.
     document.body.dataset.editorTheme = event.target.value;
     persistPrefs({ editorTheme: event.target.value });
     document.getElementById('settingsEditorTheme').value = event.target.value;
-    updateHighlightTheme();
+  });
+  document.getElementById('codeThemeSelect').addEventListener('change', event => setCodeTheme(event.target.value));
+  document.getElementById('customCodeThemeBtn').addEventListener('click', openCustomCodeThemeDialog);
+  document.getElementById('saveCustomCodeThemeBtn').addEventListener('click', saveCustomCodeTheme);
+
+  // Citation manager
+  document.getElementById('applyCitationSettingsBtn').addEventListener('click', () => applyCitationSettings(true));
+  document.getElementById('insertBibliographyBtn').addEventListener('click', insertBibliographyMarker);
+  document.getElementById('saveCitationBtn').addEventListener('click', saveCitationEntry);
+  document.getElementById('clearCitationFormBtn').addEventListener('click', clearCitationForm);
+  document.getElementById('importBibtexBtn').addEventListener('click', importBibtex);
+  document.getElementById('citationList').addEventListener('click', event => {
+    const button = event.target.closest('[data-citation-action]');
+    if (!button) return;
+    const key = button.dataset.key;
+    if (button.dataset.citationAction === 'insert') insertCitationMarker(key);
+    if (button.dataset.citationAction === 'edit') editCitation(key);
+    if (button.dataset.citationAction === 'delete') deleteCitation(key);
+  });
+
+  // Bookmark manager
+  document.getElementById('addBookmarkBtn').addEventListener('click', addBookmarkAtSelection);
+  document.getElementById('bookmarkList').addEventListener('click', event => {
+    const button = event.target.closest('[data-bookmark-action]');
+    if (!button) return;
+    const id = button.dataset.id;
+    if (button.dataset.bookmarkAction === 'save') renameBookmark(id);
+    if (button.dataset.bookmarkAction === 'go') goToBookmark(id);
+    if (button.dataset.bookmarkAction === 'delete') deleteBookmark(id);
   });
 
   // Sidebar
@@ -1322,8 +1746,8 @@ Explain what the results mean, relevant limitations, and implications.
     document.body.dataset.editorTheme = event.target.value;
     document.getElementById('editorThemeSelect').value = event.target.value;
     persistPrefs({ editorTheme: event.target.value });
-    updateHighlightTheme();
   });
+  document.getElementById('settingsCodeTheme').addEventListener('change', event => setCodeTheme(event.target.value));
   document.getElementById('settingsPreviewMode').addEventListener('change', event => setPreviewMode(event.target.value));
   document.getElementById('settingsTabSize').addEventListener('change', event => persistPrefs({ tabSize: Math.max(1, Math.min(8, Number(event.target.value) || 2)) }));
   document.getElementById('settingsImageWidth').addEventListener('change', event => persistPrefs({ imageWidth: Math.max(10, Math.min(100, Number(event.target.value) || 50)) }));

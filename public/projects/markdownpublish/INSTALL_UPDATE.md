@@ -1,15 +1,37 @@
-# MarkDownPublish v2.1 — Install the update
+# MarkDownPublish v2.2.0 — Install / Update
 
-**Recommended for existing projects:** extract `MarkDownPublish-v2.1-update.zip` **inside the existing project root**, next to `index.html`. Allow replacement of matching files. This is an overlay: it does not delete existing files, saved browser data, cached images, or vendor folders.
+This archive contains the **complete MarkDownPublish v2.2.0 project**.
 
-If you want a fully self-contained archive instead, `MarkDownPublish-v2.1-complete.zip` contains the entire updated project with its bundled libraries. Extract that into an empty directory for a fresh copy, or into your existing project directory to update files in place.
+## Update an existing project
 
-**Before updating:** commit existing changes or back up `index.html`, `assets/css/styles.css`, and `assets/js/app.js` if you edited them manually. The overlay replaces these files; it cannot automatically merge local code customizations. If you already have v2.0, no data migration or npm installation is required.
+1. Commit or back up any source-code changes you made manually.
+2. Extract the v2.2.0 ZIP directly into the existing MarkDownPublish project root (the folder containing `index.html`).
+3. Allow matching project files to be replaced.
+4. Do **not** delete browser localStorage/IndexedDB if you want to keep autosaved drafts, custom styles, cached images, and file-history handles.
+5. Hard-refresh after updating: `Ctrl+Shift+R` on Windows/Linux or `Cmd+Shift+R` on macOS.
 
-**After extracting:** hard-refresh the browser (`Ctrl+Shift+R` / `Cmd+Shift+R`) to reload the changed JavaScript and CSS. Browser localStorage and IndexedDB assets persist if you use the same site origin and browser profile. Do not click “Reset local app data” unless you intend to erase locally saved data.
+No npm installation or build step is required.
 
-**Run locally:** `run-local.bat` on Windows or `./run-local.sh` on macOS/Linux, or run `python -m http.server 8080` and visit `http://localhost:8080`.
+## Run locally
 
-**Smoke tests (optional, Node.js):** `node tests/smoke-test.js` and `node tests/layout-export-test.js`.
+- Windows: `run-local.bat`
+- macOS/Linux: `./run-local.sh`
+- Or: `python -m http.server 8080`
 
-**Browser limitation:** File System Access save dialogs work on supported Chromium browsers over HTTPS or localhost. PDF output relies on browser Print / Save as PDF. The selected page setup can be overridden by the print dialog; verify paper size/orientation/margins there.
+Then visit `http://localhost:8080`.
+
+## Optional tests
+
+```bash
+node tests/smoke-test.js
+node tests/layout-export-test.js
+node tests/v22-test.js
+```
+
+## Important compatibility notes
+
+- v2.2.0 continues to read existing v2.x `MDP-SETTINGS` metadata and browser preferences.
+- Citations and bookmarks are added to `MDP-SETTINGS` metadata only when used.
+- Existing custom styles are normalized into the v2.2 schema; table settings use safe defaults when older presets do not contain them.
+- File System Access features work best in current Chrome/Edge on HTTPS or localhost.
+- PDF output still relies on the browser print engine; verify paper size/margins in Print Preview before saving.

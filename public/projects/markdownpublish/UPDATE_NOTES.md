@@ -1,19 +1,68 @@
-# MarkDownPublish Update Notes
+# MarkDownPublish — Update Notes
 
-## 2.1.1 — Print footer overlap hotfix (2026-09-30)
+## Version 2.2.0 — 2026-10-01
+
+This release expands MarkDownPublish from a report editor into a more complete academic publishing workspace. It adds code-theme control, standalone-HTML navigation/bookmarks, a local citation manager, table styling, and a robust scrollable Document Style Studio while retaining the v2.1 print fixes.
+
+### Added
+
+- **Code theme selector** beside Editor theme with GitHub Light, GitHub Dark, Monokai Pro, Dracula, Gruvbox, and Custom.
+- **Custom code-theme editor** for background, default text, keyword, string/title, number/symbol, comment/meta, and accent/variable colors.
+- Code-theme colors are carried into live preview, standalone HTML export, and print/PDF output.
+- **Citation Manager** (`Cite` button) with the in-dialog usage guide requested by users.
+- Numeric citations (`[1]`, `[1, 2]`) and author-year citations (`(Smith, 2000)`).
+- APA, IEEE, ACM, and Harvard bibliography formatting with optional per-entry style override.
+- Manual citation fields: key, type, style, title, authors, year, venue/publisher, volume, pages, and DOI.
+- **BibTeX import** for common article/book/conference/thesis/report fields.
+- `[@bibliography]` insertion and automatic reference-list rendering.
+- Citations are stored in per-document `MDP-SETTINGS` metadata so they travel with Markdown files.
+- **Bookmark Manager** for adding a bookmark at the current Markdown selection/cursor, renaming it, navigating to it, or deleting it.
+- Standalone HTML export now builds a **floating clickable table of contents** from H1–H5 headings and custom bookmarks.
+- Standalone HTML reading canvas is now **A3-like in maximum width** on large screens and responsive on smaller screens.
+- Exported HTML includes active-section highlighting for table-of-contents links when `IntersectionObserver` is available.
+- **Table styling** in Document Style Studio: Compact/Normal/Wide density, 35/60/100% table width, border on/off, straight/dashed/dotted borders, 1/2/3 px border thickness, and steelblue/coral/lightgreen row palettes.
+- `assets/js/references.js` isolates citation parsing, BibTeX import, in-text rendering, and bibliography formatting.
+- `tests/v22-test.js` adds citation, bookmark, exported-HTML navigation, code-theme, Style Studio, table-style, and print-code pagination regression checks.
+
+### Fixed / refined
+
+- **Document Style Studio is now viewport-contained and scrollable.** The title and action buttons stay visible while the body scrolls, fixing the clipped/non-scrollable modal shown on shorter laptop displays.
+- Code-box automatic colors now follow the selected code theme instead of being frozen to the general editor/page theme.
+- Header/footer updates now preserve citation/bookmark metadata instead of replacing unrelated document settings.
+- Older custom style presets are normalized with safe default table settings.
+- Exported HTML code blocks remain fragmentable during printing, preserving the v2.1.2 long-code pagination fix.
+
+### Deliberate UX adjustment
+
+The requested values **35%, 60%, and 100%** are implemented as **table width**, not border thickness. CSS border thickness cannot meaningfully use percentage values, so border thickness is exposed separately as 1 px, 2 px, or 3 px. This avoids browser-dependent rendering and makes the control predictable.
+
+### Browser / standards notes
+
+- Citation formatting is intentionally lightweight and dependency-free; it provides practical APA/IEEE/ACM/Harvard layouts but is not a full CSL processor. Journal-specific edge cases may require manual adjustment after export.
+- BibTeX import supports common field structures but is not intended to cover every nonstandard macro/nested-value pattern used by full BibTeX engines.
+- Standalone HTML navigation is generated from rendered headings and document bookmarks. It is responsive and hidden for printing.
+- Local fonts remain device-dependent and are not embedded in exports.
+- PDF generation still uses the browser's print engine.
+
+---
+
+## Version 2.1.2 — 2026-09-30
 
 ### Fixed
 
-- Fixed a PDF/print pagination bug where an opaque white running-footer layer could cover the final lines of page content.
-- Removed the fixed-position DOM header/footer overlay from the print pipeline. Running headers and footers now use CSS paged-media `@page` margin boxes where the browser supports them.
-- Fixed the stray `0` page-number artifact caused by evaluating `counter(page)` inside a normal DOM pseudo-element. Page numbering is now generated only inside the page margin context.
-- Removed duplicate/conflicting print CSS that allowed the older overlay implementation to remain active after the v2.1 print redesign.
-- Added a safety rule: if the selected top or bottom margin is too small to contain running text, the corresponding header/footer/page number is omitted rather than allowed to overlap or clip the document.
-- Standalone HTML export now uses the same non-overlapping paged-media header/footer implementation as the in-app Print/PDF workflow.
+- Long `<pre><code>` blocks no longer move wholesale to the next printed page when they exceed the remaining page space.
+- Print CSS now allows code blocks to fragment across PDF pages while preserving box decoration and wrapped code lines.
+- Large tables may span pages while individual table rows are kept together where possible.
 
-### Compatibility note
+---
 
-Custom running headers, footers, and page numbers depend on CSS paged-media margin-box support in the browser's print engine. On browsers without that support, MarkDownPublish intentionally omits those running elements instead of falling back to a fixed overlay that could hide document content. The document body and PDF pagination remain printable.
+## Version 2.1.1 — 2026-09-30
+
+### Fixed
+
+- Removed the fixed-position footer/page-number overlay that could paint a white strip over document text at page boundaries.
+- Removed the invalid visible `0` page counter produced by a normal-DOM `counter(page)` implementation.
+- Running headers/footers/page numbers now use paged-media `@page` margin boxes where supported; unsupported browsers omit them rather than masking content.
 
 ---
 

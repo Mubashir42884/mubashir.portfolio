@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="MarkDownPublish — a local-first academic Markdown editor with live preview, LaTeX, reusable styles, file history, cached images, and HTML/PDF export." />
+  <meta name="description" content="MarkDownPublish — a local-first academic Markdown editor with live preview, citations, bookmarks, reusable styles, code themes, cached images, and HTML/PDF export." />
   <title>MarkDownPublish</title>
   <meta name="theme-color" content="#F97316" id="themeColorMeta" />
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" id="faviconLink" />
@@ -89,6 +89,16 @@
               <option value="github">GitHub</option>
               <option value="jupyter">Jupyter</option>
               <option value="midnight">Midnight</option>
+            </select>
+          </label>
+          <label>Code theme
+            <select id="settingsCodeTheme">
+              <option value="github-light">GitHub Light</option>
+              <option value="github-dark">GitHub Dark</option>
+              <option value="monokai-pro">Monokai Pro</option>
+              <option value="dracula">Dracula</option>
+              <option value="gruvbox">Gruvbox</option>
+              <option value="custom">Custom</option>
             </select>
           </label>
           <label>Default preview mode
@@ -192,6 +202,8 @@
         <button class="tool-button icon-tool" data-action="image" title="Insert image from device or URL" aria-label="Insert image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 11.5-8.8 8.8a5.1 5.1 0 0 1-7.2-7.2l9.2-9.2a3.4 3.4 0 0 1 4.8 4.8l-9.3 9.3a1.7 1.7 0 0 1-2.4-2.4l8.6-8.6"/></svg></button>
         <button class="tool-button icon-tool" data-action="link" title="Insert link" aria-label="Insert link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5a5 5 0 0 0 7.1 0l2.1-2.1a5 5 0 0 0-7.1-7.1l-1.2 1.2M14.5 9.5a5 5 0 0 0-7.1 0l-2.1 2.1a5 5 0 0 0 7.1 7.1l1.2-1.2"/></svg></button>
         <button class="tool-button icon-tool" data-action="code" title="Insert fenced code block" aria-label="Insert code block"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="3.5" width="19" height="17" rx="2"/><path d="m9 8-4 4 4 4m6-8 4 4-4 4m-2-9-2 10"/></svg></button>
+        <button class="tool-button text-tool" data-action="citation" title="Citation manager" aria-label="Citation manager">Cite</button>
+        <button class="tool-button icon-tool" data-action="bookmark" title="Bookmark selected text or manage bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h11v17l-5.5-3.4-5.5 3.4z"/></svg></button>
       </div>
 
       <div class="control-group">
@@ -216,6 +228,17 @@
             <option value="midnight">Midnight</option>
           </select>
         </label>
+        <label class="select-wrap">Code theme
+          <select id="codeThemeSelect">
+            <option value="github-light">GitHub Light</option>
+            <option value="github-dark">GitHub Dark</option>
+            <option value="monokai-pro">Monokai Pro</option>
+            <option value="dracula">Dracula</option>
+            <option value="gruvbox">Gruvbox</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+        <button class="tool-button custom-code-theme-btn" id="customCodeThemeBtn" type="button" title="Customize code theme" aria-label="Customize code theme">◐</button>
       </div>
     </section>
 
@@ -389,14 +412,28 @@
   <dialog id="styleStudioDialog" class="modal style-studio-modal">
     <form method="dialog" class="modal-card style-studio-card" id="styleStudioForm">
       <div class="modal-head">
-        <div><h2>Document Style Studio</h2><p>Customize H1–H5, paragraphs, quotation/code boxes, and running headers/footers. Set space before/after elements, then save a reusable preset.</p></div>
+        <div><h2>Document Style Studio</h2><p>Customize headings, paragraphs, quotation/code boxes, tables, and running headers/footers. Save reusable document presets.</p></div>
         <button value="cancel" class="icon-button" aria-label="Close">×</button>
       </div>
-      <div class="style-name-row">
-        <label>Style name<input id="styleNameInput" type="text" placeholder="My Academic Style" /></label>
-        <input id="styleEditingId" type="hidden" />
+      <div class="style-studio-scroll" id="styleStudioScroll">
+        <div class="style-name-row">
+          <label>Style name<input id="styleNameInput" type="text" placeholder="My Academic Style" /></label>
+          <input id="styleEditingId" type="hidden" />
+        </div>
+        <div id="styleStudioFields" class="style-studio-fields"></div>
+        <section class="style-target-card table-style-card">
+          <h3>Table</h3>
+          <div class="style-controls-grid table-controls-grid">
+            <label>Spacing<select id="tableDensity"><option value="compact">Compact</option><option value="normal">Normal</option><option value="wide">Wide</option></select></label>
+            <label>Table width<select id="tableWidth"><option value="35">35%</option><option value="60">60%</option><option value="100">100%</option></select></label>
+            <label class="check-row">Show border<input id="tableBorderEnabled" type="checkbox" checked /></label>
+            <label>Border style<select id="tableBorderStyle"><option value="solid">Straight</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></label>
+            <label>Border thickness<select id="tableBorderThickness"><option value="1">1 px</option><option value="2">2 px</option><option value="3">3 px</option></select></label>
+            <label>Accent palette<select id="tableAccent"><option value="none">None</option><option value="steelblue">Steel blue</option><option value="coral">Coral</option><option value="lightgreen">Light green</option></select></label>
+          </div>
+          <p class="style-help">Palette tinting uses 60% transparency on odd rows and 40% transparency on even rows. Border thickness is specified in pixels; the requested 35/60/100% values are used as table width because percentage-based stroke thickness is not valid CSS.</p>
+        </section>
       </div>
-      <div id="styleStudioFields" class="style-studio-fields"></div>
       <div class="modal-actions sticky-actions">
         <button value="cancel" class="button ghost">Cancel</button>
         <button id="applyStyleBtn" value="default" class="button ghost" type="button">Apply without saving</button>
@@ -405,11 +442,81 @@
     </form>
   </dialog>
 
+  <dialog id="codeThemeDialog" class="modal">
+    <form method="dialog" class="modal-card" id="codeThemeForm">
+      <div class="modal-head"><h2>Custom code theme</h2><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+      <p>Customize syntax colors for preview, exported HTML, and print/PDF code boxes.</p>
+      <div class="form-grid two">
+        <label>Background<input id="codeThemeBackground" type="color" value="#1e1e1e" /></label>
+        <label>Text<input id="codeThemeText" type="color" value="#f4f4f4" /></label>
+        <label>Keyword<input id="codeThemeKeyword" type="color" value="#ff7ab2" /></label>
+        <label>String / title<input id="codeThemeString" type="color" value="#a8cc8c" /></label>
+        <label>Number / symbol<input id="codeThemeNumber" type="color" value="#d2a8ff" /></label>
+        <label>Comment / meta<input id="codeThemeComment" type="color" value="#8b949e" /></label>
+        <label>Accent / variable<input id="codeThemeAccent" type="color" value="#79c0ff" /></label>
+      </div>
+      <div class="modal-actions"><button class="button ghost" value="cancel">Cancel</button><button class="button primary" id="saveCustomCodeThemeBtn" type="button">Use custom theme</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="bookmarkDialog" class="modal">
+    <form method="dialog" class="modal-card wide-modal bookmark-card" id="bookmarkForm">
+      <div class="modal-head"><div><h2>Bookmarks</h2><p>Bookmark the current selection/cursor. Bookmarks appear in exported HTML navigation.</p></div><button value="cancel" class="icon-button" aria-label="Close">×</button></div>
+      <div class="bookmark-add-row"><label>Bookmark name<input id="bookmarkNameInput" type="text" placeholder="e.g. Repository Skeleton" /></label><button class="button primary" id="addBookmarkBtn" type="button">Add at selection</button></div>
+      <div id="bookmarkList" class="manager-list"></div>
+      <div class="modal-actions"><button value="cancel" class="button ghost">Close</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="citationDialog" class="modal citation-modal">
+    <form method="dialog" class="modal-card citation-card" id="citationForm">
+      <div class="modal-head"><div><h2>Citation Manager</h2><p><strong>How to use:</strong> 1. Add citations below, then type [@key] anywhere in your document to cite. 2. Place [@bibliography] where you want the reference list to appear. 3. Keys are case-sensitive. Example: [@smith2000] renders as [1] or (Smith, 2000).</p></div><button value="cancel" class="icon-button" aria-label="Close">×</button></div>
+      <div class="citation-scroll">
+        <section class="manager-section">
+          <h3>Citation settings</h3>
+          <div class="form-grid three">
+            <label>Cite display<select id="citationMode"><option value="numeric">[1, 2] numeric</option><option value="author-year">(Smith, 2000)</option></select></label>
+            <label>Bibliography style<select id="citationGlobalStyle"><option value="apa">APA</option><option value="ieee">IEEE</option><option value="acm">ACM</option><option value="harvard">Harvard</option></select></label>
+            <label>Cite color<input id="citationColor" type="color" value="#526b5a" /></label>
+          </div>
+          <div class="manager-actions"><button class="button ghost" id="applyCitationSettingsBtn" type="button">Apply settings</button><button class="button ghost" id="insertBibliographyBtn" type="button">Insert [@bibliography]</button></div>
+        </section>
+        <section class="manager-section">
+          <h3>Manual citation</h3>
+          <input id="citationEditingKey" type="hidden" />
+          <div class="form-grid three">
+            <label>Key<input id="citationKey" type="text" placeholder="smith2000" /></label>
+            <label>Type<select id="citationType"><option value="journal">Journal</option><option value="book">Book</option><option value="conference">Conference</option><option value="web">Web</option><option value="thesis">Thesis</option><option value="report">Report</option><option value="other">Other</option></select></label>
+            <label>Reference style<select id="citationEntryStyle"><option value="inherit">Inherit global</option><option value="apa">APA</option><option value="ieee">IEEE</option><option value="acm">ACM</option><option value="harvard">Harvard</option></select></label>
+          </div>
+          <label>Title<input id="citationTitle" type="text" placeholder="Article, book, or paper title" /></label>
+          <label>Authors<input id="citationAuthors" type="text" placeholder="Last, First; Last, First" /></label>
+          <div class="form-grid three">
+            <label>Year<input id="citationYear" type="text" placeholder="2000" /></label>
+            <label>Volume<input id="citationVolume" type="text" placeholder="12(3)" /></label>
+            <label>Pages<input id="citationPages" type="text" placeholder="101–118" /></label>
+          </div>
+          <label>Journal / conference / publisher<input id="citationVenue" type="text" placeholder="Journal or venue (optional but recommended)" /></label>
+          <label>DOI<input id="citationDoi" type="text" placeholder="10.xxxx/xxxxx" /></label>
+          <div class="manager-actions"><button class="button primary" id="saveCitationBtn" type="button">Add citation</button><button class="button ghost" id="clearCitationFormBtn" type="button">Clear</button></div>
+        </section>
+        <section class="manager-section">
+          <h3>Import BibTeX</h3>
+          <textarea id="bibtexInput" rows="6" placeholder="@article{smith2000, ...}"></textarea>
+          <div class="manager-actions"><button class="button ghost" id="importBibtexBtn" type="button">Import BibTeX</button></div>
+        </section>
+        <section class="manager-section"><h3>Saved citations</h3><div id="citationList" class="manager-list"></div></section>
+      </div>
+      <div class="modal-actions sticky-actions"><button value="cancel" class="button ghost">Close</button></div>
+    </form>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="vendor/marked/marked.js"></script>
   <script src="vendor/highlight/highlight.min.js"></script>
   <script src="vendor/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML-full"></script>
+  <script src="assets/js/references.js"></script>
   <script src="assets/js/markdown.js"></script>
   <script src="assets/js/layout.js"></script>
   <script src="assets/js/export.js"></script>
